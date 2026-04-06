@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DS Validator — UniCesumar</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0d12;--bg2:#111620;--bg3:#161c28;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--text:#e8edf5;--text2:#7a8599;--text3:#4a5468;--accent:#0084da;--accent2:#4bdeff;--ok:#3dbd79;--warn:#ffb700;--err:#d73938;--ok-bg:rgba(61,189,121,0.1);--warn-bg:rgba(255,183,0,0.1);--err-bg:rgba(215,57,56,0.1);--r:10px;--rl:16px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Onest',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,132,218,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,132,218,0.025) 1px,transparent 1px);background-size:48px 48px;}
+.wrap{max-width:960px;margin:0 auto;padding:52px 24px 100px;position:relative;z-index:1;}
+.logo-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+.logo-box{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;}
+.logo-lbl{font-size:12px;font-weight:500;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;}
+h1{font-size:clamp(30px,5vw,44px);font-weight:700;letter-spacing:-1.5px;line-height:1.05;margin-bottom:12px;}
+h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hdesc{font-size:15px;color:var(--text2);max-width:520px;margin-bottom:20px;}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:44px;}
+.pill{font-size:11px;font-family:'JetBrains Mono',monospace;padding:4px 10px;border-radius:99px;border:1px solid var(--border2);color:var(--text3);}
+.icard{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rl);padding:28px;margin-bottom:32px;}
+.ilbl{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;}
+.fields{display:grid;grid-template-columns:1fr 260px auto;gap:10px;}
+@media(max-width:680px){.fields{grid-template-columns:1fr;}}
+.fi{height:44px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:0 14px;font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--text);outline:none;transition:border-color .2s;width:100%;}
+.fi:focus{border-color:var(--accent);}
+.fi::placeholder{color:var(--text3);}
+.btn{height:44px;padding:0 28px;background:var(--accent);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:600;font-family:'Onest',sans-serif;cursor:pointer;white-space:nowrap;transition:opacity .2s,transform .1s;}
+.btn:hover{opacity:.85;}
+.btn:active{transform:scale(.98);}
+.btn:disabled{opacity:.35;cursor:not-allowed;}
+.hint{font-size:12px;color:var(--text3);margin-top:12px;}
+.hint a{color:var(--accent2);text-decoration:none;}
+.ebar{display:none;background:var(--err-bg);border:1px solid rgba(215,57,56,.2);border-radius:var(--r);padding:12px 16px;font-size:13px;color:#f09d9a;margin-bottom:20px;}
+.loading{display:none;text-align:center;padding:72px 0;}
+.spinner{width:34px;height:34px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ltitle{font-size:15px;color:var(--text2);}
+.lstep{font-size:12px;color:var(--text3);margin-top:6px;font-family:'JetBrains Mono',monospace;}
+.results{display:none;}
+.results.on{display:block;animation:fu .35s ease;}
+@keyframes fu{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.rname{font-size:22px;font-weight:600;letter-spacing:-.5px;margin-bottom:4px;}
+.rmeta{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-bottom:28px;}
+.sgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:32px;}
+@media(max-width:640px){.sgrid{grid-template-columns:repeat(3,1fr);}} @media(max-width:900px){.sgrid{grid-template-columns:repeat(3,1fr);}}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:18px 16px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .7s .1s ease;}
+.sc.ld::after{transform:scaleX(1);}
+.sc.g::after{background:var(--ok);}
+.sc.w::after{background:var(--warn);}
+.sc.b::after{background:var(--err);}
+.slbl{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+.sval{font-size:30px;font-weight:700;letter-spacing:-1px;line-height:1;}
+.sval.g{color:var(--ok);}
+.sval.w{color:var(--warn);}
+.sval.b{color:var(--err);}
+.sbar{height:3px;background:var(--border);border-radius:99px;overflow:hidden;margin-top:10px;}
+.sfill{height:100%;border-radius:99px;transition:width .9s ease;}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:24px;overflow-x:auto;}
+.tab{font-size:13px;font-weight:500;font-family:'Onest',sans-serif;padding:10px 20px;color:var(--text2);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .15s;}
+.tab:hover{color:var(--text);}
+.tab.on{color:var(--text);border-bottom-color:var(--accent);}
+.tp{display:none;}
+.tp.on{display:block;}
+.sec{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:20px;margin-bottom:12px;}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;}
+.st{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;}
+.bdg{font-size:11px;font-weight:500;padding:3px 10px;border-radius:99px;font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+.bok{background:var(--ok-bg);color:var(--ok);}
+.berr{background:var(--err-bg);color:#f09d9a;}
+.bwarn{background:var(--warn-bg);color:var(--warn);}
+.binfo{background:rgba(0,132,218,.1);color:var(--accent2);}
+.bmanual{background:rgba(255,183,0,0.12);color:var(--warn);}
+.row{display:flex;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:12px;}
+.row:last-child{border-bottom:none;padding-bottom:0;}
+.row:first-child{padding-top:0;}
+.rl{flex:1;min-width:0;}
+.rn{font-size:13px;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rs{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:3px;}
+.rframe{font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-top:3px;}
+.rp{font-size:11px;color:var(--accent2);font-family:'JetBrains Mono',monospace;margin-top:3px;opacity:.8;}
+.rr{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-top:2px;}
+.cnt{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+.dot{width:16px;height:16px;border-radius:50%;border:1px solid var(--border2);flex-shrink:0;}
+.issue-card{background:var(--bg3);border:1px solid var(--border);border-left-width:2px;border-radius:var(--r);padding:14px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;}
+.issue-card.high{border-left-color:var(--err);}
+.issue-card.medium{border-left-color:var(--warn);}
+.idot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.ititle{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.imeta{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;line-height:1.6;}
+.iframe{font-size:11px;color:var(--accent2);font-family:'JetBrains Mono',monospace;margin-top:4px;}
+.inode{font-size:11px;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.issue-right{flex-shrink:0;}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.empty{text-align:center;padding:88px 0;color:var(--text3);font-size:14px;}
+.eicon{font-size:36px;margin-bottom:14px;opacity:.25;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{font-size:12px;font-family:'JetBrains Mono',monospace;padding:5px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:99px;color:var(--text2);}
+.chip span{color:var(--text3);margin-left:5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo-row">
+    <div class="logo-box">DS</div>
+    <span class="logo-lbl">UniCesumar Design System</span>
+  </div>
+  <h1>Design System<br><em>Validator</em></h1>
+  <p class="hdesc">Verifica componentes, cores, tipografia, espaçamentos e radius — incluindo se os valores estão vinculados às variáveis do DS ou digitados manualmente.</p>
+  <div class="pills">
+    <span class="pill">font: Onest</span>
+    <span class="pill">138 color vars</span>
+    <span class="pill">122 component sets</span>
+    <span class="pill">spacing: 2·4·8·12·16·24·32·40·48·80·120·160</span>
+    <span class="pill">radius: 4·8·12·16·24·40·500</span>
+  </div>
+
+  <div class="icard">
+    <div class="ilbl">Arquivo para validar</div>
+    <div class="fields">
+      <input class="fi" id="url" type="text" placeholder="https://www.figma.com/design/..." spellcheck="false"/>
+      <input class="fi" id="token" type="password" placeholder="Figma access token" spellcheck="false"/>
+      <button class="btn" id="btn" onclick="run()">Analisar →</button>
+    </div>
+    <p class="hint">Token em <a href="https://www.figma.com/settings" target="_blank">Figma Settings → Security → Personal access tokens</a></p>
+  </div>
+
+  <div class="ebar" id="err"></div>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p class="ltitle">Analisando arquivo...</p>
+    <p class="lstep" id="step">Conectando à API do Figma</p>
+  </div>
+
+  <div class="results" id="results">
+    <div class="rname" id="rname"></div>
+    <div class="rmeta" id="rmeta"></div>
+    <div class="sgrid" id="scores"></div>
+    <div class="tabs">
+      <button class="tab on"  onclick="tab('issues')">Inconsistências</button>
+      <button class="tab"     onclick="tab('tokens')">Tokens / Variáveis</button>
+      <button class="tab"     onclick="tab('components')">Componentes</button>
+      <button class="tab"     onclick="tab('colors')">Cores</button>
+      <button class="tab"     onclick="tab('typography')">Tipografia</button>
+      <button class="tab"     onclick="tab('pages')">Páginas</button>
+      <button class="tab"     onclick="tab('a11y')">Acessibilidade</button>
+    </div>
+    <div id="tab-issues"     class="tp on"></div>
+    <div id="tab-tokens"     class="tp"></div>
+    <div id="tab-components" class="tp"></div>
+    <div id="tab-colors"     class="tp"></div>
+    <div id="tab-typography" class="tp"></div>
+    <div id="tab-pages"      class="tp"></div>
+    <div id="tab-a11y"       class="tp"></div>
+  </div>
+
+  <div class="empty" id="empty">
+    <div class="eicon">◎</div>
+    <p>Cole o link do arquivo e o access token para começar</p>
+  </div>
+</div>
+
+<script>
+const PROXY = '/api/figma';
+
+const DS = {
+  acceptedFonts: ['Onest'], // Única fonte oficial do DS UniCesumar
+  spacing: [2,4,8,12,16,24,32,40,48,80,120,160],
+  radius:  [4,8,12,16,24,40,500],
+  colors: ["#ddf2ff","#5fb8fc","#0084da","#023860","#0e3043","#eaf6fe","#b1e2ff","#246bf7","#0a4694","#07233e","#ebf9fc","#b3e9f5","#4bdeff","#2f96be","#033a52","#edf1f2","#e1e6e8","#cad0d3","#aab1b5","#66747e","#ffffff","#101214","#daebf6","#8bc2e5","#3e9ad3","#1e5e85","#0a202e","#d8f3e5","#87d8ad","#3dbd79","#247047","#0c2719","#fdf3d8","#fadb8f","#ffb700","#b48409","#3a2b03","#f7d9d9","#e78888","#d73938","#881b1b","#400d01","#fdf7f7","#f8e8e7","#f4d9d7","#f4aba6","#f0746c","#f8f7fd","#e7e1f9","#d8cef5","#ac93f5","#7f58f5","#fdf9f2","#f7ebd4","#f2dfb8","#e3bd70","#e0ac42","#f3f9fc","#ebf4f9","#cae3f0","#84bddc","#387fa5","#fffeee","#fff8b0","#ffea00","#e7d300","#cebd00","#e9f3f2","#b5e1db","#00a6a6","#008f8f","#006666","#f3fbfa","#d8f5f2","#05dfcd","#00ccc2","#00a6a3","#eceeee","#dee0e0","#cfd3d3","#bbc0c0","#979c9c","#616867","#000000","#dceefa","#afd8ee","#4fa8e1","#2d8ac4","#172b4d","#cdf6ea","#84d5af","#3dc39a","#03885f","#00281c","#ffebd1","#ffc67c","#eea84c","#ad6500","#442701","#ffdcd4","#f09d9a","#d95538","#9c2308","#fffaf5","#ffeedb","#ffe4c6","#ffba6b","#e29b43","#fefdec","#fdfad8","#faf298","#e5d20b","#4e4804","#e5ffe7","#ccffcf","#b6ffbb","#73e57b","#24b22e","#fbf0ff","#f5e4fc","#efd4fa","#d07ff0","#a83fd1","#3c3f40","#242627","#110011"],
+  // Nomes de component sets do DS principal (comparação case-insensitive)
+  componentSets: ["accordion","accordion-header","accordion-header-vertical","accordion-line","accordion-line-vertical","accordion-vertical","alert","animated icon","audio player","avatar","avatar sm","avatar giant","badge","badge-title-text","bottom sheet","breadcrumb","breadcrumb-item","button-filter","button-md","button-oblong","button-round","button-sm","button-square","card campus","card course","card course showcase","card-billy-ad","card-billy-ad-sm","card-blog","card-enroll","card-faculty-course","card-home-hero","carousel-course","carousel-faculty-course","carousel-expertise-areas","carousel-related-courses","carousel-video","carousel simple","check-box","credit-card","datepicker","datepicker date","fixed bar","footer","header - desktop","header big link","header-mobile","header-tablet","header-carousel","header-carousel-vertical","icon base","illustration","illustration base","input","link-footer","list header menu","list-footer","location form","login form","logo-unicesumar","logo_uniasselvi_horizontal","map","mega-menu","mega-menu-v2","menu","menu-footer-support","menu-header-support","menu-item","menu-options","modal","multiselect","option","option container","otp","pagination","photo slider","price-bottom-course","progress bar","radio button","radio list item","radio-option-select","rating","resume-payment","searcharticles-filter","searchbar","select","select-sort","shimmer","single column table","single slide indicator","slider controller","social buttons","soft-lead","soft-lead-vertical","square-icon","status","step","stepper","switch","tab group","tab item","tag","tag group for cards","text button","textarea","tooltip","upload file","vertical stepper with badges","card-simple-01","card-simple-01-sm","box",".list item",".bodycell",".headercell","base list item","button illustrated","calendar day","card-video","cover","cover pill","table","arrow-narrow-right","arrow-right","brand icon","message"],
+  // Biblioteca de ícones DS Icon Library
+  // Component sets: "Icon Base" (DS principal), "Icon", "Icons", "Payment method icon" (icon lib)
+  // Ícones individuais têm nome "Component 1/nome-do-icone" ou nome simples sem set pai
+  iconSetNames: ["icon base","icon","icons","payment method icon"]
+};
+
+const SPACING_PROPS = ['paddingTop','paddingBottom','paddingLeft','paddingRight','itemSpacing','counterAxisSpacing'];
+const RADIUS_CORNERS = ['topLeftRadius','topRightRadius','bottomLeftRadius','bottomRightRadius'];
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function hexDist(h1,h2){const p=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];const[r1,g1,b1]=p(h1),[r2,g2,b2]=p(h2);return Math.sqrt((r1-r2)**2+(g1-g2)**2+(b1-b2)**2);}
+function closestDS(hex){let b=null,bd=Infinity;for(const c of DS.colors){const d=hexDist(hex,c);if(d<bd){bd=d;b=c;}}return{color:b,dist:bd};}
+function rgb2hex(r,g,b){return'#'+[r,g,b].map(v=>Math.round(v*255).toString(16).padStart(2,'0')).join('');}
+function extractKey(url){const m=url.match(/figma\.com\/(?:design|file)\/([a-zA-Z0-9]+)/);return m?m[1]:null;}
+function setStep(t){document.getElementById('step').textContent=t;}
+function pct(arr,key){const t=arr.reduce((a,c)=>a+c.count,0);const d=arr.filter(c=>c[key]).reduce((a,c)=>a+c.count,0);return t>0?Math.round(d/t*100):100;}
+function sc(v){return v>=80?'g':v>=50?'w':'b';}
+function scC(v){return v>=80?'var(--ok)':v>=50?'var(--warn)':'var(--err)';}
+function nearest(arr,v){return arr.reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a);}
+
+// ── ACESSIBILIDADE WCAG 2.2 ──────────────────────────────────────────────────
+// Baseado nos princípios POUR: Perceptível, Operável, Compreensível, Robusto
+// Níveis: A (mínimo), AA (padrão Brasil/LBI), AAA (avançado)
+
+function toLinear(v) {
+  const s = v / 255;
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+function luminance(r, g, b) {
+  return 0.2126*toLinear(r) + 0.7152*toLinear(g) + 0.0722*toLinear(b);
+}
+function contrastRatio(hex1, hex2) {
+  function lum(h) {
+    const r=parseInt(h.slice(1,3),16), g=parseInt(h.slice(3,5),16), b=parseInt(h.slice(5,7),16);
+    return luminance(r,g,b);
+  }
+  const l1=lum(hex1), l2=lum(hex2);
+  const hi=Math.max(l1,l2), lo=Math.min(l1,l2);
+  return (hi+0.05)/(lo+0.05);
+}
+
+// Nível WCAG de contraste para texto
+function getContrastLevel(ratio, fontSize, fontWeight) {
+  const bold = fontWeight >= 700;
+  const large = fontSize >= 18 || (bold && fontSize >= 14);
+  const aaMin  = large ? 3.0 : 4.5;
+  const aaaMin = large ? 4.5 : 7.0;
+  if (ratio >= aaaMin) return 'AAA';
+  if (ratio >= aaMin)  return 'AA';
+  if (ratio >= (large ? 2.0 : 3.0)) return 'A_FAIL'; // passa A mas falha AA
+  return 'FAIL';
+}
+
+// Nível WCAG de contraste para UI (non-text: botões, bordas, ícones)
+function getUIContrastLevel(ratio) {
+  if (ratio >= 4.5) return 'AAA';
+  if (ratio >= 3.0) return 'AA';  // 1.4.11 AA
+  return 'FAIL';
+}
+
+// Calcular cor de fundo efetiva subindo na árvore
+function getEffectiveBg(node, nodeMap) {
+  let cur = nodeMap[node.id]?.parent;
+  while (cur) {
+    const fills = cur.fills || [];
+    for (const f of fills) {
+      if (f.type === 'SOLID' && f.visible !== false && f.color) {
+        return rgb2hex(f.color.r, f.color.g, f.color.b);
+      }
+    }
+    cur = nodeMap[cur.id]?.parent;
+  }
+  return '#ffffff';
+}
+
+function buildNodeMap(node, map={}, parent=null) {
+  map[node.id] = {node, parent};
+  if (node.children) for (const c of node.children) buildNodeMap(c, map, node);
+  return map;
+}
+
+function walkA11y(node, acc, nodeMap, parentMap) {
+  const path = getAncestorPath(node.id, parentMap);
+  const topFrame   = path[0] || node.name;
+  const fullPath   = path.join(' › ') || node.name;
+
+  // ── 1.4.3 / 1.4.6 Contraste de texto (Perceptível) ──────────────────────
+  if (node.type === 'TEXT') {
+    const fills = node.fills || [];
+    for (const f of fills) {
+      if (f.type !== 'SOLID' || f.visible === false) continue;
+      const textHex = rgb2hex(f.color.r, f.color.g, f.color.b);
+      const bgHex   = getEffectiveBg(node, nodeMap);
+      const ratio   = contrastRatio(textHex, bgHex);
+      const fs      = node.style?.fontSize || node.fontSize || 16;
+      const fw      = node.style?.fontWeight || node.fontWeight || 400;
+      const level   = getContrastLevel(ratio, fs, fw);
+
+      if (level === 'FAIL' || level === 'A_FAIL') {
+        const chars = (node.characters || '').slice(0, 50);
+        acc.a11y.push({
+          principle: 'Perceptível',
+          criterion: '1.4.3',
+          level: 'AA',
+          status: 'FAIL',
+          title: `Contraste insuficiente: ${ratio.toFixed(2)}:1`,
+          detail: `Texto "${chars}" — ${fs}px / fw${fw} — requer ${fs>=18||(fw>=700&&fs>=14)?'3:1':'4.5:1'} (AA)`,
+          fullPath, topFrame
+        });
+      } else if (level === 'AA') {
+        // Passa AA mas não AAA — reportar como aviso
+        const fs2 = node.style?.fontSize || node.fontSize || 16;
+        const fw2 = node.style?.fontWeight || node.fontWeight || 400;
+        const large = fs2 >= 18 || (fw2 >= 700 && fs2 >= 14);
+        if (ratio < (large ? 4.5 : 7.0)) {
+          acc.a11yInfo.push({
+            principle: 'Perceptível',
+            criterion: '1.4.6',
+            level: 'AAA',
+            status: 'WARN',
+            title: `Contraste ${ratio.toFixed(2)}:1 — passa AA, não alcança AAA`,
+            detail: `Requer ${large?'4.5':'7.0'}:1 para AAA`,
+            fullPath, topFrame
+          });
+        }
+      }
+    }
+
+    // ── 1.4.4 Tamanho mínimo de fonte (Perceptível) ─────────────────────────
+    const fs = node.style?.fontSize || node.fontSize || 16;
+    if (fs < 12) {
+      acc.a11y.push({
+        principle: 'Perceptível',
+        criterion: '1.4.4',
+        level: 'AA',
+        status: 'FAIL',
+        title: `Texto muito pequeno: ${fs}px`,
+        detail: `Textos menores que 12px dificultam leitura com zoom. Mínimo recomendado: 12px (normal), 14px (ideal)`,
+        fullPath, topFrame
+      });
+    }
+
+    // ── 2.4.6 Botões e links com texto genérico (Operável) ──────────────────
+    const chars = (node.characters || '').toLowerCase().trim();
+    const generic = ['clique aqui','clique','aqui','saiba mais','veja mais','acesse','link','botão','button'];
+    if (generic.includes(chars)) {
+      acc.a11y.push({
+        principle: 'Operável',
+        criterion: '2.4.6',
+        level: 'AA',
+        status: 'FAIL',
+        title: `Texto de link/botão genérico: "${node.characters}"`,
+        detail: `Textos como "clique aqui" não descrevem o destino. Use textos descritivos como "Ver detalhes do curso"`,
+        fullPath, topFrame
+      });
+    }
+  }
+
+  // ── 2.5.5 Área mínima de toque — 44x44px (Operável) ─────────────────────
+  if (node.type === 'INSTANCE' || node.type === 'FRAME') {
+    const name = node.name.toLowerCase();
+    const isInteractive = ['button','btn','link','cta','icon','nav','menu','tab','checkbox','radio','select','input','toggle','switch'].some(k => name.includes(k));
+    if (isInteractive && node.width > 0 && node.height > 0) {
+      if (node.width < 44 || node.height < 44) {
+        acc.a11y.push({
+          principle: 'Operável',
+          criterion: '2.5.5',
+          level: 'AA',
+          status: 'FAIL',
+          title: `Área de toque pequena: ${Math.round(node.width)}×${Math.round(node.height)}px`,
+          detail: `"${node.name}" — mínimo recomendado pelo WCAG 2.5.5: 44×44px`,
+          fullPath, topFrame
+        });
+      }
+    }
+  }
+
+  // ── 1.1.1 Imagens sem descrição (Perceptível) ────────────────────────────
+  if (node.type === 'FRAME' || node.type === 'RECTANGLE') {
+    const fills = node.fills || [];
+    const hasImage = fills.some(f => f.type === 'IMAGE');
+    if (hasImage) {
+      const name = node.name.toLowerCase();
+      const hasDesc = node.description || name.includes('decorat') || name.includes('bg') || name.includes('background') || name.includes('banner') || name.includes('cover');
+      if (!hasDesc) {
+        acc.a11yInfo.push({
+          principle: 'Perceptível',
+          criterion: '1.1.1',
+          level: 'A',
+          status: 'WARN',
+          title: `Imagem sem descrição: "${node.name}"`,
+          detail: `Imagens informativas precisam de texto alternativo. Se decorativa, marcar como tal`,
+          fullPath, topFrame
+        });
+      }
+    }
+  }
+
+  // ── 1.3.1 Hierarquia de headings (Perceptível) ───────────────────────────
+  if (node.type === 'TEXT') {
+    const fs = node.style?.fontSize || node.fontSize || 16;
+    const fw = node.style?.fontWeight || node.fontWeight || 400;
+    if ((fs >= 24 || fw >= 700) && !node.name.toLowerCase().includes('label') && !node.name.toLowerCase().includes('caption')) {
+      acc.headings.push({ fs, fw, name: node.name, chars: (node.characters||'').slice(0,50), fullPath, topFrame });
+    }
+  }
+
+  if (node.children) for (const c of node.children) walkA11y(c, acc, nodeMap, parentMap);
+}
+
+// ── VERIFICAR SE COMPONENTE É DO DS ──────────────────────────────────────────
+// compSetName = nome do component set (mainComponent.parent.name via REST)
+// compName    = nome do componente individual (mainComponent.name via REST)
+// nodeName    = nome que o designer deu ao nó (pode ser qualquer coisa)
+function compInDS(compSetName, compName) {
+  const setN  = (compSetName || '').toLowerCase().trim();
+  const compN = (compName || '').toLowerCase().trim();
+
+  // 1. Verificar pelo component SET — fonte mais confiável
+  if (setN && DS.componentSets.some(c => c === setN)) return true;
+
+  // 2. Ícones da biblioteca DS Icon Library
+  // Sets: "Icon Base", "Icon", "Icons", "Payment method icon"
+  if (setN && DS.iconSetNames.some(s => s === setN)) return true;
+
+  // 3. Ícones avulsos sem set pai: nome no padrão "Component 1/nome-icone"
+  if (!setN && compN.startsWith('component 1/')) return true;
+
+  // 4. Ícones avulsos sem set pai e sem prefixo: verificar se o component set
+  // pai é "Icon Base" — nesses casos compSetName vem vazio mas o pai real
+  // já foi validado como "Icon Base" acima na hierarquia
+  // Fallback: se não tem set pai mas tem nome simples de ícone (sem espaços, kebab-case)
+  // e o nome do nó sugere que é ícone, consideramos válido
+  if (!setN && /^[a-z0-9-]+$/.test(compN) && compN.length < 40) return true;
+
+  return false;
+}
+
+// ── VERIFICAÇÃO DE VARIÁVEL VINCULADA ────────────────────────────────────────
+function spacingHasVar(node, prop) {
+  const bv = node.boundVariables || {};
+  if (bv[prop]) return true;
+  // Instâncias herdam do master — não reportar erro
+  if (node.type === 'INSTANCE') return true;
+  return false;
+}
+
+function radiusHasVar(node) {
+  const bv = node.boundVariables || {};
+  // Tem var em cornerRadius direto
+  if (bv.cornerRadius) return true;
+  // Tem var em qualquer canto individual
+  if (RADIUS_CORNERS.some(c => bv[c])) return true;
+  // Instância herda do master
+  if (node.type === 'INSTANCE') return true;
+  return false;
+}
+
+// ── PARENT MAP ────────────────────────────────────────────────────────────────
+function buildParentMap(node, map={}, parent=null){
+  map[node.id]=parent;
+  if(node.children) for(const c of node.children) buildParentMap(c,map,node);
+  return map;
+}
+
+function getAncestorPath(nodeId, parentMap, maxDepth=6){
+  const path=[];
+  let cur=parentMap[nodeId];
+  while(cur && path.length<maxDepth){
+    if(cur.type!=='CANVAS') path.unshift(cur.name);
+    cur=parentMap[cur.id];
+  }
+  return path;
+}
+
+// ── WALK ──────────────────────────────────────────────────────────────────────
+// componentMap: mapa de componentId → {name, componentSetId, componentSetName}
+// obtido do campo file.components + file.componentSets da REST API
+function walk(node, acc, parentMap, componentMap) {
+  const path       = getAncestorPath(node.id, parentMap);
+  const topFrame   = path[0] || node.name;
+  const parentFrame= path.length > 1 ? path[path.length-1] : topFrame;
+
+  // ── Componentes ────────────────────────────────────────────────────────────
+  // Só analisa instâncias de nível "visível" — ignora sub-instâncias internas
+  // (IDs com ";" são nós internos de componentes, não instâncias do designer)
+  if (node.type === 'INSTANCE' && !node.id.includes(';')) {
+    const compId  = node.componentId || '';
+    const compMeta= componentMap[compId] || {};
+
+    // Nome do component set (fonte principal de verdade)
+    const setName  = compMeta.componentSetName || '';
+    // Nome do componente individual (fallback)
+    const compName = compMeta.name || node.name;
+
+    const inDS = compInDS(setName, compName);
+
+    // Chave agrupa por component set quando disponível, senão por compName
+    const displayName = setName || compName;
+    const k = displayName + '|||' + topFrame;
+    if (!acc.comps[k]) acc.comps[k] = {
+      name: displayName,
+      nodeName: node.name,
+      topFrame,
+      inDS,
+      count: 0
+    };
+    acc.comps[k].count++;
+  }
+
+  // ── Cores ──────────────────────────────────────────────────────────────────
+  // Instâncias: fills vinculados no master, não reportar como erro de variável
+  const isInstance = node.type === 'INSTANCE';
+  const bvNode = node.boundVariables || {};
+
+  for (const prop of ['fills','strokes']) {
+    const paints = node[prop] || [];
+    // boundVariables.fills é array paralelo aos fills
+    const boundArr = bvNode[prop] || [];
+
+    for (let i = 0; i < paints.length; i++) {
+      const p = paints[i];
+      if (p.type !== 'SOLID' || p.visible === false || !p.color) continue;
+
+      const hex = rgb2hex(p.color.r, p.color.g, p.color.b);
+      const inDSColor = closestDS(hex).dist < 25;
+
+      // Tem variável vinculada? boundArr[i] é VARIABLE_ALIAS se sim
+      const hasVar = isInstance || !!(boundArr[i] && boundArr[i].type === 'VARIABLE_ALIAS');
+
+      if (!acc.colors[hex]) acc.colors[hex] = {hex, count:0, frames:new Set(), noVar:[], wrongColor:[]};
+      acc.colors[hex].count++;
+      acc.colors[hex].frames.add(topFrame);
+
+      // Cor certa mas sem variável vinculada
+      if (!hasVar && inDSColor) {
+        if (acc.colors[hex].noVar.length < 10) {
+          acc.colors[hex].noVar.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type});
+        }
+      }
+      // Cor errada (fora do DS)
+      if (!inDSColor) {
+        if (acc.colors[hex].wrongColor.length < 10) {
+          acc.colors[hex].wrongColor.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type});
+        }
+      }
+    }
+  }
+
+  // ── Fontes ─────────────────────────────────────────────────────────────────
+  if (node.type === 'TEXT' && node.style?.fontFamily) {
+    const f = node.style.fontFamily;
+    if (!acc.fonts[f]) acc.fonts[f] = {family:f, count:0, locations:[]};
+    acc.fonts[f].count++;
+    // Capturar caminho completo para fontes fora do DS
+    if (f !== 'Onest' && acc.fonts[f].locations.length < 20) {
+      // path já contém toda a hierarquia de ancestrais (topFrame → ... → parentFrame)
+      const fullPath = path.join(' › ') || node.name;
+      const textPreview = (node.characters || '').slice(0, 40).replace(/\n/g,' ');
+      acc.fonts[f].locations.push({fullPath, nodeName: node.name, textPreview});
+    }
+  }
+
+  // ── Spacing (apenas FRAMEs criados pelo designer, não instâncias) ──────────
+  if (node.type !== 'INSTANCE') {
+    for (const prop of SPACING_PROPS) {
+      const val = node[prop];
+      if (typeof val !== 'number' || val <= 0) continue;
+      const hasVar    = spacingHasVar(node, prop);
+      const validVal  = DS.spacing.some(s => Math.abs(s-val) < 0.6);
+      if (!hasVar) {
+        const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
+        const k = `sp:${prop}:${Math.round(val)}:${topFrame}:${parentFrame}`;
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'spacing', prop, value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, status, count:0};
+        acc.tokens[k].count++;
+      }
+    }
+
+    // ── Radius ───────────────────────────────────────────────────────────────
+    const val = node.cornerRadius;
+    if (typeof val === 'number' && val > 0) {
+      const hasVar   = radiusHasVar(node);
+      const validVal = DS.radius.some(r => Math.abs(r-val) < 0.6);
+      if (!hasVar) {
+        const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
+        const k = `r:${Math.round(val*10)}:${topFrame}:${parentFrame}`;
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'radius', prop:'cornerRadius', value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, status, count:0};
+        acc.tokens[k].count++;
+      }
+    }
+  }
+
+  if (node.children) for (const c of node.children) walk(c, acc, parentMap, componentMap);
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function figAPI(path, token) {
+  const r = await fetch(`${PROXY}?path=${encodeURIComponent(path)}`, {
+    headers: {'X-Figma-Token': token}
+  });
+  if (!r.ok) throw new Error(`Figma API ${r.status}`);
+  return r.json();
+}
+
+// Constrói mapa componentId → {name, componentSetName} a partir do campo
+// file.components e file.componentSets retornados pela REST API
+function buildComponentMap(fileData) {
+  const map = {};
+  const sets = fileData.componentSets || {};   // id → {name}
+  const comps = fileData.components || {};      // id → {name, componentSetId}
+
+  for (const [id, comp] of Object.entries(comps)) {
+    const setId   = comp.componentSetId || '';
+    const setName = sets[setId]?.name || '';
+    map[id] = {
+      name: comp.name || '',
+      componentSetId: setId,
+      componentSetName: setName
+    };
+  }
+  return map;
+}
+
+// ── ANALYSIS ──────────────────────────────────────────────────────────────────
+async function analyzeFile(fileKey, token) {
+  setStep('Buscando estrutura e mapa de componentes...');
+  // depth=1 para pegar components/componentSets sem baixar o arquivo inteiro
+  const fileMeta = await figAPI(`files/${fileKey}?depth=1`, token);
+  const componentMap = buildComponentMap(fileMeta);
+
+  setStep('Buscando páginas...');
+  const file  = await figAPI(`files/${fileKey}?depth=3`, token);
+  const pages = file.document.children || [];
+  const acc   = {comps:{}, colors:{}, fonts:{}, tokens:{}, a11y:[], a11yInfo:[], headings:[]};
+  const pagesSummary = [];
+
+  for (const page of pages) {
+    if (page.type !== 'CANVAS') continue;
+    setStep(`Lendo: ${page.name}...`);
+    const pd    = await figAPI(`files/${fileKey}/nodes?ids=${encodeURIComponent(page.id)}&depth=10`, token);
+    const pnode = pd.nodes[page.id]?.document;
+    if (!pnode) continue;
+    let nc = 0;
+    (function cnt(n){nc++;if(n.children)n.children.forEach(cnt);})(pnode);
+    pagesSummary.push({name:page.name, nodeCount:nc});
+    const parentMap = buildParentMap(pnode);
+    walk(pnode, acc, parentMap, componentMap);
+    const nodeMap = buildNodeMap(pnode);
+    walkA11y(pnode, acc, nodeMap, parentMap);
+  }
+
+  setStep('Cruzando com tokens do DS...');
+
+  const components = Object.values(acc.comps).sort((a,b)=>b.count-a.count);
+  const colors = Object.values(acc.colors).map(c => {
+    const {color:cl, dist} = closestDS(c.hex);
+    const inDS = dist < 25;
+    return {
+      ...c,
+      frames: [...c.frames],
+      inDS,
+      closestDS: cl,
+      dist: Math.round(dist),
+      noVar: c.noVar || [],      // cor certa mas sem variável
+      wrongColor: c.wrongColor || [] // cor errada
+    };
+  }).sort((a,b) => b.count - a.count);
+  const fonts      = Object.values(acc.fonts).map(f=>({...f,inDS:DS.acceptedFonts.includes(f.family),locations:f.locations||[]})).sort((a,b)=>b.count-a.count);
+
+  const tokenIssues = Object.values(acc.tokens).sort((a,b)=>b.count-a.count);
+  const manualWrong = tokenIssues.filter(t=>t.status==='manual_wrong_value');
+  const manualOk    = tokenIssues.filter(t=>t.status==='manual_ok_value');
+
+  const totalTokenIssues = manualWrong.reduce((a,t)=>a+t.count,0)*2 + manualOk.reduce((a,t)=>a+t.count,0);
+  const tokenScore = Math.max(0, Math.round(100 - totalTokenIssues * 0.5));
+
+  const issues = [];
+  // Cores erradas (fora do DS)
+  for (const c of colors.filter(c=>!c.inDS))
+    issues.push({sev:'high', type:'cor', title:`Cor fora do DS: ${c.hex}`, detail:`${c.count}x — substituir por ${c.closestDS} (dist: ${c.dist})`, frames:c.frames.slice(0,3), node:null});
+  // Cores certas mas sem variável vinculada
+  for (const c of colors.filter(c=>c.inDS && c.noVar.length > 0))
+    issues.push({sev:'medium', type:'cor', title:`Cor sem variável vinculada: ${c.hex}`, detail:`${c.noVar.length} nó(s) com valor manual — vincular à variável do DS`, frames:[...new Set(c.noVar.map(l=>l.fullPath.split(' › ')[0]))].slice(0,3), node:null});
+  for (const c of components.filter(c=>!c.inDS))
+    issues.push({sev:c.count>=5?'high':'medium', type:'componente', title:`Componente fora do DS: ${c.name}`, detail:`${c.count}x`, frames:[c.topFrame].filter(Boolean), node:c.nodeName!==c.name?c.nodeName:null});
+  for (const f of fonts.filter(f=>!f.inDS))
+    issues.push({sev:'high', type:'tipografia', title:`Fonte fora do DS: ${f.family}`, detail:`${f.count}x — usar Onest`, frames:[], node:null});
+  for (const t of manualWrong.slice(0,15))
+    issues.push({sev:'high', type:t.kind, title:`${t.prop} = ${t.value}px — valor e variável incorretos`, detail:`${t.count}x — valor fora dos tokens e sem variável vinculada`, frames:[t.topFrame], parentFrame:t.parentFrame, node:t.nodeName});
+  for (const t of manualOk.slice(0,15))
+    issues.push({sev:'medium', type:t.kind, title:`${t.prop} = ${t.value}px — sem variável vinculada`, detail:`${t.count}x — vincular à variável: ${t.kind==='spacing'?'spacing':'border-radius'}-${nearest(t.kind==='spacing'?DS.spacing:DS.radius,t.value)}`, frames:[t.topFrame], parentFrame:t.parentFrame, node:t.nodeName});
+  issues.sort((a,b)=>(a.sev==='high'?0:1)-(b.sev==='high'?0:1));
+
+  // Acessibilidade — deduplicar e ordenar por criticidade
+  const a11yFails = acc.a11y.filter((v,i,a)=>a.findIndex(x=>x.title===v.title&&x.fullPath===v.fullPath)===i);
+  const a11yWarns = acc.a11yInfo.filter((v,i,a)=>a.findIndex(x=>x.title===v.title&&x.fullPath===v.fullPath)===i).slice(0,30);
+
+  // Verificar hierarquia de headings
+  const headingIssues = [];
+  if (acc.headings.length > 0) {
+    const sizes = [...new Set(acc.headings.map(h=>h.fs))].sort((a,b)=>b-a);
+    if (sizes.length === 1 && acc.headings.length > 3) {
+      headingIssues.push({
+        principle:'Perceptível', criterion:'1.3.1', level:'A', status:'WARN',
+        title:'Possível falta de hierarquia visual de títulos',
+        detail:`Todos os ${acc.headings.length} títulos detectados têm o mesmo tamanho (${sizes[0]}px). Verifique se há estrutura H1 > H2 > H3`,
+        fullPath:'(múltiplos frames)', topFrame:'(geral)'
+      });
+    }
+  }
+
+  const allA11y = [...a11yFails, ...headingIssues, ...a11yWarns];
+  const a11yScore = Math.max(0, Math.round(100 - a11yFails.length * 5 - headingIssues.length * 2));
+
+  return {fileName:file.name, pages:pagesSummary, components, colors, fonts, tokenIssues, manualWrong, manualOk, tokenScore, issues, allA11y, a11yFails, a11yWarns:a11yWarns.concat(headingIssues), a11yScore};
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function tab(name){
+  const names=['issues','tokens','components','colors','typography','pages','a11y'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('on',names[i]===name));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
+  document.getElementById('tab-'+name).classList.add('on');
+}
+function bdg(ok){return`<span class="bdg ${ok?'bok':'berr'}">${ok?'DS':'fora'}</span>`;}
+function sbdg(s){return`<span class="bdg ${s==='high'?'berr':'bwarn'}">${s}</span>`;}
+
+function issueCard(i){
+  const fp = i.frames?.length ? `<div class="iframe">▸ ${i.frames.join(', ')}${i.parentFrame&&i.parentFrame!==i.frames[0]?` › ${i.parentFrame}`:''}</div>` : '';
+  const np = i.node ? `<div class="inode">nó: ${i.node}</div>` : '';
+  return `<div class="issue-card ${i.sev}">
+    <div class="idot" style="background:${i.sev==='high'?'var(--err)':'var(--warn)'}"></div>
+    <div style="flex:1"><div class="ititle">${i.title}</div><div class="imeta">${i.type} · ${i.detail}</div>${fp}${np}</div>
+    <div class="issue-right">${sbdg(i.sev)}</div>
+  </div>`;
+}
+
+function tokenRow(t){
+  const isWrong = t.status==='manual_wrong_value';
+  const sug     = nearest(t.kind==='spacing'?DS.spacing:DS.radius, t.value);
+  const varName = t.kind==='spacing'?`spacing-${sug}`:`border-radius-${sug}`;
+  return `<div class="row">
+    <div class="rl">
+      <div class="rn">${t.prop} = ${t.value}px</div>
+      <div class="rs">${isWrong?`valor fora dos tokens — mais próximo: ${sug}px`:'valor correto, mas digitado manualmente'} → vincular: <code>${varName}</code></div>
+      <div class="rframe">▸ ${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?` › ${t.parentFrame}`:''}</div>
+      <div class="rp">nó: ${t.nodeName} (${t.nodeType})</div>
+    </div>
+    <div class="rr"><span class="cnt">${t.count}x</span><span class="bdg ${isWrong?'berr':'bmanual'}">${isWrong?'valor+var':'sem var'}</span></div>
+  </div>`;
+}
+
+function renderResults(d){
+  document.getElementById('rname').textContent = d.fileName;
+  const tn = d.pages.reduce((a,p)=>a+p.nodeCount,0);
+  document.getElementById('rmeta').textContent = `${d.pages.length} página(s) · ${tn.toLocaleString('pt-BR')} nós · ${d.issues.length} inconsistência(s)`;
+
+  const cp=pct(d.components,'inDS'), clp=pct(d.colors,'inDS'), fp=pct(d.fonts,'inDS'), ts=Math.min(d.tokenScore,100), as11=Math.min(d.a11yScore||100,100);
+  const score=Math.round((cp+clp+fp+ts+as11)/5);
+
+  document.getElementById('scores').innerHTML=[['Score geral',score],['Componentes',cp],['Cores',clp],['Tipografia',fp],['Tokens/Vars',ts],['Acessibilidade',as11]].map(([l,v])=>`<div class="sc ${sc(v)}"><div class="slbl">${l}</div><div class="sval ${sc(v)}">${v}%</div><div class="sbar"><div class="sfill" style="width:${v}%;background:${scC(v)}"></div></div></div>`).join('');
+  setTimeout(()=>document.querySelectorAll('.sc').forEach(c=>c.classList.add('ld')),100);
+
+  document.getElementById('tab-issues').innerHTML = d.issues.length===0
+    ? `<div class="sec"><p style="font-size:13px;color:var(--ok);padding:4px 0">Nenhuma inconsistência encontrada.</p></div>`
+    : d.issues.map(issueCard).join('');
+
+  const allTk=[...d.manualWrong,...d.manualOk];
+  document.getElementById('tab-tokens').innerHTML = allTk.length===0
+    ? `<div class="sec"><p style="font-size:13px;color:var(--ok);padding:4px 0">Todos os valores estão vinculados às variáveis do DS.</p></div>`
+    : [`<div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--err)"></div>valor+var — valor errado E sem variável</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--warn)"></div>sem var — valor correto mas digitado manualmente</div>
+      </div>`,
+      d.manualWrong.length?`<div class="sec"><div class="sh"><span class="st">Valor errado + sem variável</span><span class="bdg berr">${d.manualWrong.length} tipos</span></div>${d.manualWrong.map(tokenRow).join('')}</div>`:'',
+      d.manualOk.length?`<div class="sec"><div class="sh"><span class="st">Valor correto, sem variável vinculada</span><span class="bdg bwarn">${d.manualOk.length} tipos</span></div>${d.manualOk.map(tokenRow).join('')}</div>`:''
+    ].join('');
+
+  const inDS=d.components.filter(c=>c.inDS), outDS=d.components.filter(c=>!c.inDS);
+  document.getElementById('tab-components').innerHTML=[
+    outDS.length?`<div class="sec"><div class="sh"><span class="st">Fora do DS</span><span class="bdg berr">${outDS.length} tipos</span></div>
+      ${outDS.map(c=>`<div class="row"><div class="rl">
+        <div class="rn">${c.name}</div>
+        ${c.nodeName&&c.nodeName!==c.name?`<div class="rs">nó: ${c.nodeName}</div>`:''}
+        <div class="rframe">▸ ${c.topFrame}</div>
+      </div><div class="rr"><span class="cnt">${c.count}x</span>${bdg(false)}</div></div>`).join('')}</div>`:'',
+    `<div class="sec"><div class="sh"><span class="st">No DS</span><span class="bdg bok">${inDS.length} tipos</span></div>
+      ${inDS.slice(0,30).map(c=>`<div class="row"><div class="rl"><div class="rn">${c.name}</div></div><div class="rr"><span class="cnt">${c.count}x</span>${bdg(true)}</div></div>`).join('')}
+      ${inDS.length>30?`<div style="padding:10px 0;font-size:11px;color:var(--text3)">+${inDS.length-30} outros no DS</div>`:''}</div>`
+  ].join('');
+
+  const badC    = d.colors.filter(c => !c.inDS);
+  const noVarC  = d.colors.filter(c => c.inDS && c.noVar.length > 0);
+  const goodC   = d.colors.filter(c => c.inDS && c.noVar.length === 0);
+
+  function locRows(locs) {
+    const uniq = locs.filter((l,i,a)=>a.findIndex(x=>x.fullPath===l.fullPath&&x.nodeName===l.nodeName)===i);
+    return uniq.map(l=>`<div style="background:var(--bg3);border-radius:6px;padding:6px 10px;margin-top:5px;">
+      <div class="rframe" style="margin:0">▸ ${l.fullPath}</div>
+      <div class="rp" style="margin-top:2px">nó: ${l.nodeName} (${l.nodeType})</div>
+    </div>`).join('');
+  }
+
+  document.getElementById('tab-colors').innerHTML=[
+    // 1. Cores erradas (fora do DS)
+    badC.length?`<div class="sec"><div class="sh"><span class="st">Cor fora do DS</span><span class="bdg berr">${badC.length} cores</span></div>
+      ${badC.map(c=>`<div class="row"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
+        <span class="dot" style="background:${c.hex};margin-top:3px;flex-shrink:0"></span>
+        <div class="rl"><div class="rn">${c.hex}</div>
+          <div class="rs">substituir por ${c.closestDS} (dist: ${c.dist})</div>
+          ${locRows(c.wrongColor)}
+        </div>
+      </div><div class="rr" style="align-self:flex-start"><span class="cnt">${c.count}x</span>${bdg(false)}</div></div>`).join('')}</div>`:'',
+
+    // 2. Cores certas mas sem variável vinculada
+    noVarC.length?`<div class="sec"><div class="sh"><span class="st">Cor correta, sem variável vinculada</span><span class="bdg bwarn">${noVarC.length} cores</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">O valor está certo mas foi digitado manualmente — vincular à variável do DS</div>
+      ${noVarC.map(c=>`<div class="row"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
+        <span class="dot" style="background:${c.hex};margin-top:3px;flex-shrink:0"></span>
+        <div class="rl"><div class="rn">${c.hex}</div>
+          <div class="rs">vincular à variável correspondente no DS</div>
+          ${locRows(c.noVar)}
+        </div>
+      </div><div class="rr" style="align-self:flex-start"><span class="cnt">${c.noVar.length}x</span><span class="bdg bwarn">sem var</span></div></div>`).join('')}</div>`:'',
+
+    // 3. Corretas e vinculadas
+    goodC.length?`<div class="sec"><div class="sh"><span class="st">Cor no DS com variável</span><span class="bdg bok">${goodC.length} cores</span></div>
+      ${goodC.slice(0,20).map(c=>`<div class="row">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <span class="dot" style="background:${c.hex}"></span>
+          <div class="rn">${c.hex}</div>
+        </div>
+        <div class="rr"><span class="cnt">${c.count}x</span>${bdg(true)}</div>
+      </div>`).join('')}
+      ${goodC.length>20?`<div style="padding:10px 0;font-size:11px;color:var(--text3)">+${goodC.length-20} outras corretas</div>`:''}</div>`:'',
+  ].join('');
+
+  // Fontes no DS (Onest)
+  const okFonts  = d.fonts.filter(f=>f.inDS);
+  // Fontes fora do DS — agrupar por fonte e listar locations
+  const badFonts = d.fonts.filter(f=>!f.inDS);
+  document.getElementById('tab-typography').innerHTML=[
+    badFonts.length ? `<div class="sec"><div class="sh"><span class="st">Fontes fora do DS</span><span class="bdg berr">${badFonts.length} fontes</span></div>
+      ${badFonts.map(f=>{
+        // Deduplicar por caminho completo
+        const locs = (f.locations||[]).filter((l,i,arr)=>arr.findIndex(x=>x.fullPath===l.fullPath&&x.nodeName===l.nodeName)===i);
+        return `<div class="row"><div class="rl">
+          <div class="rn" style="font-family:'${f.family}',sans-serif">${f.family}</div>
+          <div class="rs">substituir por Onest · ${f.count} ocorrência(s)</div>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+            ${locs.map(l=>`
+              <div style="background:var(--bg3);border-radius:6px;padding:7px 10px;">
+                <div class="rframe" style="margin:0">▸ ${l.fullPath}</div>
+                <div class="rp" style="margin-top:3px">nó: ${l.nodeName}${l.textPreview?` — "${l.textPreview}"`:''}</div>
+              </div>`).join('')}
+          </div>
+        </div><div class="rr" style="align-self:flex-start"><span class="cnt">${f.count}x</span>${bdg(false)}</div></div>`;
+      }).join('')}
+    </div>` : '',
+    okFonts.length ? `<div class="sec"><div class="sh"><span class="st">Fontes no DS</span><span class="bdg bok">${okFonts.length} fonte(s)</span></div>
+      ${okFonts.map(f=>`<div class="row"><div class="rl"><div class="rn" style="font-family:'${f.family}',sans-serif">${f.family}</div><div class="rs">fonte oficial do DS</div></div><div class="rr"><span class="cnt">${f.count}x</span>${bdg(true)}</div></div>`).join('')}
+    </div>` : '',
+  ].join('');
+
+  document.getElementById('tab-pages').innerHTML=`<div class="sec"><div class="sh"><span class="st">Páginas analisadas</span><span class="bdg binfo">${d.pages.length}</span></div>
+    <div class="chips">${d.pages.map(p=>`<span class="chip">${p.name}<span>${p.nodeCount.toLocaleString('pt-BR')} nós</span></span>`).join('')}</div></div>`;
+
+  // ── Acessibilidade ─────────────────────────────────────────────────────────
+  const a11yFails = d.a11yFails || [];
+  const a11yWarns = d.a11yWarns || [];
+  const allA11y   = d.allA11y  || [];
+
+  // Agrupar por princípio POUR
+  const principles = ['Perceptível','Operável','Compreensível','Robusto'];
+  const levelOrder = {A:0, AA:1, AAA:2};
+  const levelColor = {A:'var(--err)', AA:'var(--warn)', AAA:'var(--accent2)'};
+  const levelBg    = {A:'berr', AA:'bwarn', AAA:'binfo'};
+
+  function a11yCard(item) {
+    const isErr = item.status === 'FAIL';
+    return `<div class="issue-card ${isErr?'high':'medium'}" style="margin-bottom:8px">
+      <div class="idot" style="background:${isErr?'var(--err)':'var(--warn)'}"></div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span class="bdg ${levelBg[item.level]}">${item.level}</span>
+          <span style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${item.criterion} — ${item.principle}</span>
+        </div>
+        <div class="ititle">${item.title}</div>
+        <div class="imeta">${item.detail}</div>
+        ${item.fullPath?`<div class="iframe">▸ ${item.fullPath}</div>`:''}
+      </div>
+      <span class="bdg ${isErr?'berr':'bwarn'}">${isErr?'Falha':'Aviso'}</span>
+    </div>`;
+  }
+
+  const a11yByPrinciple = principles.map(p => {
+    const items = allA11y.filter(i => i.principle === p);
+    if (!items.length) return '';
+    const fails = items.filter(i=>i.status==='FAIL');
+    const warns = items.filter(i=>i.status==='WARN');
+    return `<div class="sec">
+      <div class="sh">
+        <span class="st">${p}</span>
+        <div style="display:flex;gap:6px">
+          ${fails.length?`<span class="bdg berr">${fails.length} falha(s)</span>`:''}
+          ${warns.length?`<span class="bdg bwarn">${warns.length} aviso(s)</span>`:''}
+        </div>
+      </div>
+      ${items.sort((a,b)=>(a.status==='FAIL'?0:1)-(b.status==='FAIL'?0:1)).map(a11yCard).join('')}
+    </div>`;
+  }).join('');
+
+  const a11yLegend = `<div class="legend" style="margin-bottom:16px">
+    <div class="leg-item"><div class="leg-dot" style="background:var(--err)"></div>Nível A — obrigatório (mínimo legal LBI)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--warn)"></div>Nível AA — padrão de mercado/Brasil</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--accent2)"></div>Nível AAA — avançado</div>
+    <div class="leg-item" style="font-size:11px;color:var(--text3);margin-top:4px">Baseado em WCAG 2.2 — POUR · LBI 13.146/2015 · NBR 17060:2022 · eMag</div>
+  </div>`;
+
+  document.getElementById('tab-a11y').innerHTML = allA11y.length === 0
+    ? `<div class="sec"><p style="font-size:13px;color:var(--ok);padding:4px 0">Nenhum problema de acessibilidade detectado na análise estática.</p><p style="font-size:11px;color:var(--text3);margin-top:8px">Nota: a análise estática cobre ~35% dos critérios WCAG. Recomenda-se testes manuais com leitores de tela (NVDA, VoiceOver, TalkBack) e navegação por teclado.</p></div>`
+    : a11yLegend + (a11yByPrinciple || `<div class="sec"><p style="font-size:13px;color:var(--text2)">Nenhum problema encontrado por princípio.</p></div>`);
+
+  document.getElementById('results').classList.add('on');
+  document.getElementById('empty').style.display='none';
+}
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
+async function run(){
+  const url   = document.getElementById('url').value.trim();
+  const token = document.getElementById('token').value.trim();
+  const err   = document.getElementById('err');
+  err.style.display='none';
+  document.getElementById('results').classList.remove('on');
+  document.getElementById('empty').style.display='none';
+  if(!url||!url.includes('figma.com')){err.textContent='URL inválida.';err.style.display='block';document.getElementById('empty').style.display='block';return;}
+  if(!token){err.textContent='Informe o Figma Access Token.';err.style.display='block';document.getElementById('empty').style.display='block';return;}
+  const k=extractKey(url);
+  if(!k){err.textContent='Não foi possível extrair o fileKey.';err.style.display='block';document.getElementById('empty').style.display='block';return;}
+  const btn=document.getElementById('btn');
+  btn.disabled=true;btn.textContent='Analisando...';
+  document.getElementById('loading').style.display='block';
+  try{
+    const data=await analyzeFile(k,token);
+    renderResults(data);
+  }catch(e){
+    err.textContent=`Erro: ${e.message}`;err.style.display='block';document.getElementById('empty').style.display='block';
+  }finally{
+    btn.disabled=false;btn.textContent='Analisar →';
+    document.getElementById('loading').style.display='none';
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('url').addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+});
+</script>
+</body>
+</html>
