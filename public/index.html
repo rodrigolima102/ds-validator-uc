@@ -139,6 +139,15 @@ h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--ac
   <div class="results" id="results">
     <div class="rname" id="rname"></div>
     <div class="rmeta" id="rmeta"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+      <div>
+        <div class="rname" id="rname"></div>
+        <div class="rmeta" id="rmeta"></div>
+      </div>
+      <button id="btn-download" onclick="downloadReport()" style="display:none;align-items:center;gap:8px;height:38px;padding:0 18px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;font-weight:500;font-family:'Onest',sans-serif;cursor:pointer;transition:opacity .2s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+        ↓ Baixar relatório
+      </button>
+    </div>
     <div class="sgrid" id="scores"></div>
     <div class="tabs">
       <button class="tab on"  onclick="tab('issues')">Inconsistências</button>
@@ -731,6 +740,7 @@ function tokenRow(t){
 
 function renderResults(d){
   document.getElementById('rname').textContent = d.fileName;
+  document.getElementById('btn-download').style.display = 'inline-flex';
   const tn = d.pages.reduce((a,p)=>a+p.nodeCount,0);
   document.getElementById('rmeta').textContent = `${d.pages.length} página(s) · ${tn.toLocaleString('pt-BR')} nós · ${d.issues.length} inconsistência(s)`;
 
@@ -857,18 +867,24 @@ function renderResults(d){
 
   function a11yCard(item) {
     const isErr = item.status === 'FAIL';
+    // Cor do badge por nível — sempre consistente
+    const levelBadge = {
+      'A':   'background:#d73938;color:#ffdcd4',
+      'AA':  'background:#ffb700;color:#3a2b03',
+      'AAA': 'background:#246bf7;color:#eaf6fe'
+    }[item.level] || '';
     return `<div class="issue-card ${isErr?'high':'medium'}" style="margin-bottom:8px">
       <div class="idot" style="background:${isErr?'var(--err)':'var(--warn)'}"></div>
       <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <span class="bdg ${levelBg[item.level]}">${item.level}</span>
-          <span style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">${item.criterion} — ${item.principle}</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:600;padding:2px 9px;border-radius:99px;font-family:'JetBrains Mono',monospace;${levelBadge}">Nível ${item.level}</span>
+          <span style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text3)">${item.criterion} · ${item.principle}</span>
+          <span class="bdg ${isErr?'berr':'bwarn'}" style="margin-left:auto">${isErr?'Falha':'Aviso'}</span>
         </div>
         <div class="ititle">${item.title}</div>
         <div class="imeta">${item.detail}</div>
         ${item.fullPath?`<div class="iframe">▸ ${item.fullPath}</div>`:''}
       </div>
-      <span class="bdg ${isErr?'berr':'bwarn'}">${isErr?'Falha':'Aviso'}</span>
     </div>`;
   }
 
