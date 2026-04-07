@@ -659,8 +659,15 @@ async function analyzeFile(fileKey, token) {
   const manualWrong = tokenIssues.filter(t=>t.status==='manual_wrong_value');
   const manualOk    = tokenIssues.filter(t=>t.status==='manual_ok_value');
 
-  const totalTokenIssues = manualWrong.reduce((a,t)=>a+t.count,0)*2 + manualOk.reduce((a,t)=>a+t.count,0);
-  const tokenScore = Math.max(0, Math.round(100 - totalTokenIssues * 0.5));
+  // Score de tokens: proporção de nós SEM problema vs total de nós inspecionados
+  const totalNodes      = pagesSummary.reduce((a,p)=>a+p.nodeCount, 0);
+  const wrongCount      = manualWrong.reduce((a,t)=>a+t.count, 0);
+  const manualOkCount   = manualOk.reduce((a,t)=>a+t.count, 0);
+  // Pesos: valor errado = 1, valor certo sem var = 0.5
+  const weightedIssues  = wrongCount + manualOkCount * 0.5;
+  // Base de comparação: nós que têm spacing/radius (estimado como 30% do total)
+  const baseNodes       = Math.max(1, totalNodes * 0.3);
+  const tokenScore      = Math.max(0, Math.round((1 - weightedIssues / baseNodes) * 100));
 
   const issues = [];
   // Cores erradas (fora do DS)
@@ -698,7 +705,14 @@ async function analyzeFile(fileKey, token) {
   }
 
   const allA11y = [...a11yFails, ...headingIssues, ...a11yWarns];
-  const a11yScore = Math.max(0, Math.round(100 - a11yFails.length * 5 - headingIssues.length * 2));
+  // Score a11y: proporção de falhas vs total de nós (AA obrigatórios pesam mais)
+  const totalNodes2  = pagesSummary.reduce((a,p)=>a+p.nodeCount, 0);
+  const aaFails      = a11yFails.filter(i=>i.level==='AA').length;
+  const aFails       = a11yFails.filter(i=>i.level==='A').length;
+  const weightedA11y = aaFails * 2 + aFails * 1 + headingIssues.length;
+  // Base: estimamos 1 problema a cada 50 nós como limite de 0%
+  const a11yBase     = Math.max(1, totalNodes2 / 50);
+  const a11yScore    = Math.max(0, Math.round((1 - Math.min(weightedA11y / a11yBase, 1)) * 100));
 
   return {fileName:file.name, pages:pagesSummary, components, colors, fonts, tokenIssues, manualWrong, manualOk, tokenScore, issues, allA11y, a11yFails, a11yWarns:a11yWarns.concat(headingIssues), a11yScore};
 }
@@ -744,8 +758,10 @@ function renderResults(d){
   const tn = d.pages.reduce((a,p)=>a+p.nodeCount,0);
   document.getElementById('rmeta').textContent = `${d.pages.length} página(s) · ${tn.toLocaleString('pt-BR')} nós · ${d.issues.length} inconsistência(s)`;
 
-  const cp=pct(d.components,'inDS'), clp=pct(d.colors,'inDS'), fp=pct(d.fonts,'inDS'), ts=Math.min(d.tokenScore,100), as11=Math.min(d.a11yScore||100,100);
-  const score=Math.round((cp+clp+fp+ts+as11)/5);
+  const cp=pct(d.components,'inDS'), clp=pct(d.colors,'inDS'), fp=pct(d.fonts,'inDS');
+  const ts=Math.min(d.tokenScore,100), as11=Math.min(d.a11yScore||100,100);
+  // Média ponderada: componentes e cores têm mais peso
+  const score=Math.round((cp*2 + clp*2 + fp + ts + as11) / 7);
 
   document.getElementById('scores').innerHTML=[['Score geral',score],['Componentes',cp],['Cores',clp],['Tipografia',fp],['Tokens/Vars',ts],['Acessibilidade',as11]].map(([l,v])=>`<div class="sc ${sc(v)}"><div class="slbl">${l}</div><div class="sval ${sc(v)}">${v}%</div><div class="sbar"><div class="sfill" style="width:${v}%;background:${scC(v)}"></div></div></div>`).join('');
   setTimeout(()=>document.querySelectorAll('.sc').forEach(c=>c.classList.add('ld')),100);
