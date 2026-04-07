@@ -1,18 +1,6 @@
 {
-  "functions": {
-    "api/figma.js": {
-      "memory": 128,
-      "maxDuration": 30
-    }
-  },
-  "routes": [
-    {
-      "src": "/api/figma",
-      "dest": "/api/figma.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/public/$1"
-    }
+  "rewrites": [
+    { "source": "/api/figma", "destination": "/api/figma" },
+    { "source": "/(.*)", "destination": "/public/$1" }
   ]
 }
