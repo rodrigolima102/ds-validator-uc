@@ -113,7 +113,7 @@ h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--ac
   <p class="hdesc">Verifica componentes, cores, tipografia, espaçamentos e radius — incluindo se os valores estão vinculados às variáveis do DS ou digitados manualmente.</p>
   <div class="pills">
     <span class="pill">font: Onest</span>
-    <span class="pill">138 color vars</span>
+    <span class="pill">73 color vars (Semantic Unicesumar)</span>
     <span class="pill">122 component sets</span>
     <span class="pill">spacing: 2·4·8·12·16·24·32·40·48·80·120·160</span>
     <span class="pill">radius: 4·8·12·16·24·40·500</span>
@@ -180,9 +180,66 @@ const DS = {
   acceptedFonts: ['Onest'], // Única fonte oficial do DS UniCesumar
   spacing: [2,4,8,12,16,24,32,40,48,80,120,160],
   radius:  [4,8,12,16,24,40,500],
-  colors: ["#ddf2ff","#5fb8fc","#0084da","#023860","#0e3043","#eaf6fe","#b1e2ff","#246bf7","#0a4694","#07233e","#ebf9fc","#b3e9f5","#4bdeff","#2f96be","#033a52","#edf1f2","#e1e6e8","#cad0d3","#aab1b5","#66747e","#ffffff","#101214","#daebf6","#8bc2e5","#3e9ad3","#1e5e85","#0a202e","#d8f3e5","#87d8ad","#3dbd79","#247047","#0c2719","#fdf3d8","#fadb8f","#ffb700","#b48409","#3a2b03","#f7d9d9","#e78888","#d73938","#881b1b","#400d01","#fdf7f7","#f8e8e7","#f4d9d7","#f4aba6","#f0746c","#f8f7fd","#e7e1f9","#d8cef5","#ac93f5","#7f58f5","#fdf9f2","#f7ebd4","#f2dfb8","#e3bd70","#e0ac42","#f3f9fc","#ebf4f9","#cae3f0","#84bddc","#387fa5","#fffeee","#fff8b0","#ffea00","#e7d300","#cebd00","#e9f3f2","#b5e1db","#00a6a6","#008f8f","#006666","#f3fbfa","#d8f5f2","#05dfcd","#00ccc2","#00a6a3","#eceeee","#dee0e0","#cfd3d3","#bbc0c0","#979c9c","#616867","#000000","#dceefa","#afd8ee","#4fa8e1","#2d8ac4","#172b4d","#cdf6ea","#84d5af","#3dc39a","#03885f","#00281c","#ffebd1","#ffc67c","#eea84c","#ad6500","#442701","#ffdcd4","#f09d9a","#d95538","#9c2308","#fffaf5","#ffeedb","#ffe4c6","#ffba6b","#e29b43","#fefdec","#fdfad8","#faf298","#e5d20b","#4e4804","#e5ffe7","#ccffcf","#b6ffbb","#73e57b","#24b22e","#fbf0ff","#f5e4fc","#efd4fa","#d07ff0","#a83fd1","#3c3f40","#242627","#110011"],
+  colors: [
+    // 73 cores únicas — Semantic/Unicesumar + Semantic/Unicesumar Dark (sem Uniasselvi)
+    "#000000","#0084da","#023860","#033a52","#07233e","#0a202e","#0a4694",
+    "#0c2719","#0e3043","#101214","#110011","#172b4d","#1e5e85","#242627",
+    "#246bf7","#247047","#2f96be","#387fa5","#3a2b03","#3c3f40","#3dbd79",
+    "#3e9ad3","#400d01","#4bdeff","#5fb8fc","#616867","#66747e","#7f58f5",
+    "#84bddc","#87d8ad","#881b1b","#8bc2e5","#979c9c","#aab1b5","#ac93f5",
+    "#b1e2ff","#b3e9f5","#b48409","#cad0d3","#cae3f0","#cebd00","#d73938",
+    "#d8cef5","#d8f3e5","#daebf6","#ddf2ff","#dee0e0","#e0ac42","#e1e6e8",
+    "#e3bd70","#e78888","#e7e1f9","#eaf6fe","#ebf4f9","#ebf9fc","#eceeee",
+    "#edf1f2","#efd4fa","#f0746c","#f2dfb8","#f3f9fc","#f4aba6","#f4d9d7",
+    "#f7d9d9","#f7ebd4","#f8e8e7","#f8f7fd","#fadb8f","#fdf3d8","#fdf7f7",
+    "#fdf9f2","#ffb700","#ffffff"
+  ],
   // Nomes de component sets do DS principal (comparação case-insensitive)
-  componentSets: ["accordion","accordion-header","accordion-header-vertical","accordion-line","accordion-line-vertical","accordion-vertical","alert","animated icon","audio player","avatar","avatar sm","avatar giant","badge","badge-title-text","bottom sheet","breadcrumb","breadcrumb-item","button-filter","button-md","button-oblong","button-round","button-sm","button-square","card campus","card course","card course showcase","card-billy-ad","card-billy-ad-sm","card-blog","card-enroll","card-faculty-course","card-home-hero","carousel-course","carousel-faculty-course","carousel-expertise-areas","carousel-related-courses","carousel-video","carousel simple","check-box","credit-card","datepicker","datepicker date","fixed bar","footer","header - desktop","header big link","header-mobile","header-tablet","header-carousel","header-carousel-vertical","icon base","illustration","illustration base","input","link-footer","list header menu","list-footer","location form","login form","logo-unicesumar","logo_uniasselvi_horizontal","map","mega-menu","mega-menu-v2","menu","menu-footer-support","menu-header-support","menu-item","menu-options","modal","multiselect","option","option container","otp","pagination","photo slider","price-bottom-course","progress bar","radio button","radio list item","radio-option-select","rating","resume-payment","searcharticles-filter","searchbar","select","select-sort","shimmer","single column table","single slide indicator","slider controller","social buttons","soft-lead","soft-lead-vertical","square-icon","status","step","stepper","switch","tab group","tab item","tag","tag group for cards","text button","textarea","tooltip","upload file","vertical stepper with badges","card-simple-01","card-simple-01-sm","box",".list item",".bodycell",".headercell","base list item","button illustrated","calendar day","card-video","cover","cover pill","table","arrow-narrow-right","arrow-right","brand icon","message"],
+  // 124 component sets EXATOS + 49 componentes avulsos válidos (extraídos do DS UniCesumar)
+  componentSets: [
+    ".bodycell",".card-simple-01",".card-simple-01-sm",".headercell",".list item",
+    ".single column table body cell",".single column table header cell",
+    "accordion","accordion-header","accordion-header-vertical",
+    "accordion-line","accordion-line-vertical","accordion-vertical",
+    "acessibility - reference numbers","alert","animated icon","audio player",
+    "avatar","avatar sm","badge","badge-title-text","base list item",
+    "bottom sheet","box","breadcrumb","breadcrumb-item",
+    "button illustrated","button social whatsapp",
+    "button-filter","button-md","button-oblong","button-round","button-sm","button-square",
+    "calendar day","card acessibilidade","card campus","card course","card course showcase",
+    "card entry methods","card progress horizontal","card progress vertical",
+    "card-billy-ad","card-billy-ad-sm","card-blog","card-enroll","card-faculty-course",
+    "card-home-hero","card-video","carousel simple","carousel-course",
+    "carousel-faculty-course","carousel-video","check-box","confirmation form",
+    "cover","cover pill","credit-card","datepicker","datepicker date",
+    "fixed bar","footer","grid","header - desktop","header big link",
+    "header-carousel","header-carousel-vertical","header-mobile","header-tablet",
+    "icon base","illustration","illustration base","input",
+    "link-footer","list header menu","list-footer","location form","login form",
+    "logo-unicesumar","map","mega-menu","mega-menu-v2","menu",
+    "menu-footer-support","menu-header-support","menu-item","menu-options","modal",
+    "multiselect","option","option container","otp","pagination","photo slider",
+    "pop over","price-bottom-course","progress bar","radio button","radio list item",
+    "radio-option-select","rating","resume-payment","searcharticles-filter","searchbar",
+    "select","select-sort","shimmer","single column table","single slide indicator",
+    "slider controller","social buttons","soft-lead","soft-lead-vertical","square-icon",
+    "status","step","switch","tab group","tab item","tag","text button",
+    "textarea","tooltip","upload file",
+    // Componentes avulsos válidos
+    ".header",".highlight",".row",".title card",
+    "account menu","banner-fluid-blog-mosaic","base card","big leaf tag","body text",
+    "can we help","card-expertise-areas","carousel entry method","carousel entry method sm",
+    "carousel illustrated button","carousel photo category","carousel photo category sm",
+    "carousel simple gradient","carousel simple scholarship","carousel-blog",
+    "carousel-expertise-areas","carousel-home-hero","carousel-home-hero-sm",
+    "carousel-related-courses","carousel-video-sm","dropdown account",
+    "enceja","enem","form doc sent","giant leaf tag",
+    "map pin","map pop up content","marquee","nubank",
+    "option container - reduced first installmenet","option container/offer-switch",
+    "photo","photo category","pix","placholder slot","portador-diploma",
+    "stepper","subscription form","table","tag group for cards","toast",
+    "transferencia","upload enroll doc","vertical stepper with badges","vestibular-online"
+  ],
   // Biblioteca de ícones DS Icon Library
   // Component sets: "Icon Base" (DS principal), "Icon", "Icons", "Payment method icon" (icon lib)
   // Ícones individuais têm nome "Component 1/nome-do-icone" ou nome simples sem set pai
@@ -401,22 +458,20 @@ function compInDS(compSetName, compName) {
   const setN  = (compSetName || '').toLowerCase().trim();
   const compN = (compName || '').toLowerCase().trim();
 
-  // 1. Verificar pelo component SET — fonte mais confiável
+  // 1. Verificar pelo component set — comparação exata (case-insensitive)
   if (setN && DS.componentSets.some(c => c === setN)) return true;
 
   // 2. Ícones da biblioteca DS Icon Library
-  // Sets: "Icon Base", "Icon", "Icons", "Payment method icon"
   if (setN && DS.iconSetNames.some(s => s === setN)) return true;
 
-  // 3. Ícones avulsos sem set pai: nome no padrão "Component 1/nome-icone"
-  if (!setN && compN.startsWith('component 1/')) return true;
+  // 3. Ícone avulso: padrão "Component 1/nome-icone"
+  if (compN.startsWith('component 1/')) return true;
 
-  // 4. Ícones avulsos sem set pai e sem prefixo: verificar se o component set
-  // pai é "Icon Base" — nesses casos compSetName vem vazio mas o pai real
-  // já foi validado como "Icon Base" acima na hierarquia
-  // Fallback: se não tem set pai mas tem nome simples de ícone (sem espaços, kebab-case)
-  // e o nome do nó sugere que é ícone, consideramos válido
-  if (!setN && /^[a-z0-9-]+$/.test(compN) && compN.length < 40) return true;
+  // 4. Componente sem set pai — verificar na lista de avulsos válidos
+  if (!setN && DS.componentSets.some(c => c === compN)) return true;
+
+  // 5. Ícone avulso sem prefixo — kebab-case simples (nome do ícone da lib)
+  if (!setN && /^[a-z][a-z0-9-]*$/.test(compN) && compN.length < 50 && !compN.includes(' ')) return true;
 
   return false;
 }
@@ -671,15 +726,47 @@ async function analyzeFile(fileKey, token) {
 
   const issues = [];
   // Cores erradas (fora do DS)
-  for (const c of colors.filter(c=>!c.inDS))
-    issues.push({sev:'high', type:'cor', title:`Cor fora do DS: ${c.hex}`, detail:`${c.count}x — substituir por ${c.closestDS} (dist: ${c.dist})`, frames:c.frames.slice(0,3), node:null});
+  for (const c of colors.filter(c=>!c.inDS)) {
+    const locs = c.wrongColor || [];
+    const uniqFrames = [...new Set(locs.map(l=>l.fullPath.split(' › ')[0]))].slice(0,3);
+    issues.push({sev:'high', type:'cor',
+      title:`Cor fora do DS: ${c.hex}`,
+      detail:`${c.count}x — substituir por ${c.closestDS} (dist: ${c.dist})`,
+      frames: uniqFrames.length ? uniqFrames : c.frames.slice(0,3),
+      fullPath: locs.length ? locs[0].fullPath : (c.frames[0]||''),
+      node: locs.length ? `nó: ${locs[0].nodeName}` : null
+    });
+  }
   // Cores certas mas sem variável vinculada
-  for (const c of colors.filter(c=>c.inDS && c.noVar.length > 0))
-    issues.push({sev:'medium', type:'cor', title:`Cor sem variável vinculada: ${c.hex}`, detail:`${c.noVar.length} nó(s) com valor manual — vincular à variável do DS`, frames:[...new Set(c.noVar.map(l=>l.fullPath.split(' › ')[0]))].slice(0,3), node:null});
+  for (const c of colors.filter(c=>c.inDS && c.noVar.length > 0)) {
+    const locs = c.noVar || [];
+    issues.push({sev:'medium', type:'cor',
+      title:`Cor sem variável vinculada: ${c.hex}`,
+      detail:`${locs.length} nó(s) com valor manual — vincular à variável do DS`,
+      frames: [...new Set(locs.map(l=>l.fullPath.split(' › ')[0]))].slice(0,3),
+      fullPath: locs.length ? locs[0].fullPath : '',
+      node: locs.length ? `nó: ${locs[0].nodeName} (${locs[0].nodeType})` : null
+    });
+  }
   for (const c of components.filter(c=>!c.inDS))
-    issues.push({sev:c.count>=5?'high':'medium', type:'componente', title:`Componente fora do DS: ${c.name}`, detail:`${c.count}x`, frames:[c.topFrame].filter(Boolean), node:c.nodeName!==c.name?c.nodeName:null});
-  for (const f of fonts.filter(f=>!f.inDS))
-    issues.push({sev:'high', type:'tipografia', title:`Fonte fora do DS: ${f.family}`, detail:`${f.count}x — usar Onest`, frames:[], node:null});
+    issues.push({sev:c.count>=5?'high':'medium', type:'componente',
+      title:`Componente fora do DS: ${c.name}`,
+      detail:`${c.count}x`,
+      frames:[c.topFrame].filter(Boolean),
+      fullPath: c.topFrame,
+      node: c.nodeName!==c.name ? `nó renomeado: "${c.nodeName}"` : null
+    });
+  for (const f of fonts.filter(f=>!f.inDS)) {
+    const locs = f.locations || [];
+    const uniqFrames = [...new Set(locs.map(l=>l.fullPath.split(' › ')[0]))].slice(0,3);
+    issues.push({sev:'high', type:'tipografia',
+      title:`Fonte fora do DS: ${f.family}`,
+      detail:`${f.count}x — usar Onest`,
+      frames: uniqFrames,
+      fullPath: locs.length ? locs[0].fullPath : '',
+      node: locs.length ? `"${locs[0].textPreview}"` : null
+    });
+  }
   for (const t of manualWrong.slice(0,15))
     issues.push({sev:'high', type:t.kind, title:`${t.prop} = ${t.value}px — valor e variável incorretos`, detail:`${t.count}x — valor fora dos tokens e sem variável vinculada`, frames:[t.topFrame], parentFrame:t.parentFrame, node:t.nodeName});
   for (const t of manualOk.slice(0,15))
@@ -728,8 +815,15 @@ function bdg(ok){return`<span class="bdg ${ok?'bok':'berr'}">${ok?'DS':'fora'}</
 function sbdg(s){return`<span class="bdg ${s==='high'?'berr':'bwarn'}">${s}</span>`;}
 
 function issueCard(i){
-  const fp = i.frames?.length ? `<div class="iframe">▸ ${i.frames.join(', ')}${i.parentFrame&&i.parentFrame!==i.frames[0]?` › ${i.parentFrame}`:''}</div>` : '';
-  const np = i.node ? `<div class="inode">nó: ${i.node}</div>` : '';
+  let pathStr = '';
+  if (i.fullPath && i.fullPath.length > 0) {
+    pathStr = i.fullPath;
+  } else if (i.frames?.length) {
+    pathStr = i.frames.join(', ');
+    if (i.parentFrame && i.parentFrame !== i.frames[0]) pathStr += ' › ' + i.parentFrame;
+  }
+  const fp = pathStr ? `<div class="iframe">▸ ${pathStr}</div>` : '';
+  const np = i.node ? `<div class="inode">${i.node}</div>` : '';
   return `<div class="issue-card ${i.sev}">
     <div class="idot" style="background:${i.sev==='high'?'var(--err)':'var(--warn)'}"></div>
     <div style="flex:1"><div class="ititle">${i.title}</div><div class="imeta">${i.type} · ${i.detail}</div>${fp}${np}</div>
