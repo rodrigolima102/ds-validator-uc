@@ -321,7 +321,7 @@ function buildNodeMap(node, map={}, parent=null) {
   return map;
 }
 
-function walkA11y(node, acc, nodeMap, parentMap) {
+function walkA11y(node, acc, nodeMap, parentMap, pageId) {
   const path = getAncestorPath(node.id, parentMap);
   const topFrame   = path[0] || node.name;
   const fullPath   = path.join(' › ') || node.name;
@@ -447,7 +447,7 @@ function walkA11y(node, acc, nodeMap, parentMap) {
     }
   }
 
-  if (node.children) for (const c of node.children) walkA11y(c, acc, nodeMap, parentMap);
+  if (node.children) for (const c of node.children) walkA11y(c, acc, nodeMap, parentMap, pageId);
 }
 
 // ── VERIFICAR SE COMPONENTE É DO DS ──────────────────────────────────────────
@@ -516,7 +516,7 @@ function getAncestorPath(nodeId, parentMap, maxDepth=6){
 // ── WALK ──────────────────────────────────────────────────────────────────────
 // componentMap: mapa de componentId → {name, componentSetId, componentSetName}
 // obtido do campo file.components + file.componentSets da REST API
-function walk(node, acc, parentMap, componentMap) {
+function walk(node, acc, parentMap, componentMap, pageId) {
   const path       = getAncestorPath(node.id, parentMap);
   const topFrame   = path[0] || node.name;
   const parentFrame= path.length > 1 ? path[path.length-1] : topFrame;
@@ -537,13 +537,13 @@ function walk(node, acc, parentMap, componentMap) {
       topFrame,
       fullPath,
       nodeId: node.id,
-      pageId: window._currentPageId,
+      pageId,
       inDS,
       count: 0
     };
     // Sempre atualizar nodeId para ter um exemplo válido
     acc.comps[k].nodeId = node.id;
-    acc.comps[k].pageId = window._currentPageId;
+    acc.comps[k].pageId = pageId;
     acc.comps[k].count++;
   }
 
@@ -574,13 +574,13 @@ function walk(node, acc, parentMap, componentMap) {
       // Cor certa mas sem variável vinculada
       if (!hasVar && inDSColor) {
         if (acc.colors[hex].noVar.length < 10) {
-          acc.colors[hex].noVar.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id, pageId: window._currentPageId});
+          acc.colors[hex].noVar.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id, pageId});
         }
       }
       // Cor errada (fora do DS)
       if (!inDSColor) {
         if (acc.colors[hex].wrongColor.length < 10) {
-          acc.colors[hex].wrongColor.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id, pageId: window._currentPageId});
+          acc.colors[hex].wrongColor.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id, pageId});
         }
       }
     }
@@ -596,7 +596,7 @@ function walk(node, acc, parentMap, componentMap) {
       // path já contém toda a hierarquia de ancestrais (topFrame → ... → parentFrame)
       const fullPath = path.join(' › ') || node.name;
       const textPreview = (node.characters || '').slice(0, 40).replace(/\n/g,' ');
-      acc.fonts[f].locations.push({fullPath, nodeName: node.name, textPreview, nodeId: node.id, pageId: window._currentPageId});
+      acc.fonts[f].locations.push({fullPath, nodeName: node.name, textPreview, nodeId: node.id, pageId});
     }
   }
 
@@ -610,7 +610,7 @@ function walk(node, acc, parentMap, componentMap) {
       if (!hasVar) {
         const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
         const k = `sp:${prop}:${Math.round(val)}:${topFrame}:${parentFrame}`;
-        if (!acc.tokens[k]) acc.tokens[k] = {kind:'spacing', prop, value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId:window._currentPageId, status, count:0};
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'spacing', prop, value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId, status, count:0};
         acc.tokens[k].count++;
       }
     }
@@ -623,13 +623,13 @@ function walk(node, acc, parentMap, componentMap) {
       if (!hasVar) {
         const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
         const k = `r:${Math.round(val*10)}:${topFrame}:${parentFrame}`;
-        if (!acc.tokens[k]) acc.tokens[k] = {kind:'radius', prop:'cornerRadius', value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId:window._currentPageId, status, count:0};
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'radius', prop:'cornerRadius', value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId, status, count:0};
         acc.tokens[k].count++;
       }
     }
   }
 
-  if (node.children) for (const c of node.children) walk(c, acc, parentMap, componentMap);
+  if (node.children) for (const c of node.children) walk(c, acc, parentMap, componentMap, pageId);
 }
 
 // ── API ───────────────────────────────────────────────────────────────────────
@@ -686,10 +686,9 @@ async function analyzeFile(fileKey, token) {
     (function cnt(n){nc++;if(n.children)n.children.forEach(cnt);})(pnode);
     pagesSummary.push({name:page.name, nodeCount:nc});
     const parentMap = buildParentMap(pnode);
-    window._currentPageId = page.id;
-    walk(pnode, acc, parentMap, componentMap);
+    walk(pnode, acc, parentMap, componentMap, page.id);
     const nodeMap = buildNodeMap(pnode);
-    walkA11y(pnode, acc, nodeMap, parentMap);
+    walkA11y(pnode, acc, nodeMap, parentMap, page.id);
   }
 
   setStep('Cruzando com tokens do DS...');
@@ -781,7 +780,7 @@ async function analyzeFile(fileKey, token) {
       detail:`${t.count}x — valor fora dos tokens e sem variável vinculada`,
       frames:[t.topFrame], parentFrame:t.parentFrame,
       fullPath:`${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?' › '+t.parentFrame:''}`,
-      nodeId: t.nodeId,
+      nodeId: t.nodeId, pageId: t.pageId,
       node:t.nodeName
     });
   for (const t of manualOk.slice(0,15))
@@ -790,7 +789,7 @@ async function analyzeFile(fileKey, token) {
       detail:`${t.count}x — vincular à variável: ${t.kind==='spacing'?'spacing':'border-radius'}-${nearest(t.kind==='spacing'?DS.spacing:DS.radius,t.value)}`,
       frames:[t.topFrame], parentFrame:t.parentFrame,
       fullPath:`${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?' › '+t.parentFrame:''}`,
-      nodeId: t.nodeId,
+      nodeId: t.nodeId, pageId: t.pageId,
       node:t.nodeName
     });
   issues.sort((a,b)=>(a.sev==='high'?0:1)-(b.sev==='high'?0:1));
