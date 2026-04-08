@@ -522,29 +522,25 @@ function walk(node, acc, parentMap, componentMap) {
   const parentFrame= path.length > 1 ? path[path.length-1] : topFrame;
 
   // ── Componentes ────────────────────────────────────────────────────────────
-  // Só analisa instâncias de nível "visível" — ignora sub-instâncias internas
-  // (IDs com ";" são nós internos de componentes, não instâncias do designer)
   if (node.type === 'INSTANCE' && !node.id.includes(';')) {
     const compId  = node.componentId || '';
     const compMeta= componentMap[compId] || {};
-
-    // Nome do component set (fonte principal de verdade)
     const setName  = compMeta.componentSetName || '';
-    // Nome do componente individual (fallback)
     const compName = compMeta.name || node.name;
-
     const inDS = compInDS(setName, compName);
-
-    // Chave agrupa por component set quando disponível, senão por compName
     const displayName = setName || compName;
     const k = displayName + '|||' + topFrame;
     if (!acc.comps[k]) acc.comps[k] = {
       name: displayName,
       nodeName: node.name,
       topFrame,
+      fullPath,
+      nodeId: node.id,
       inDS,
       count: 0
     };
+    // Sempre atualizar nodeId para ter um exemplo válido
+    acc.comps[k].nodeId = node.id;
     acc.comps[k].count++;
   }
 
@@ -575,13 +571,13 @@ function walk(node, acc, parentMap, componentMap) {
       // Cor certa mas sem variável vinculada
       if (!hasVar && inDSColor) {
         if (acc.colors[hex].noVar.length < 10) {
-          acc.colors[hex].noVar.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type});
+          acc.colors[hex].noVar.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id});
         }
       }
       // Cor errada (fora do DS)
       if (!inDSColor) {
         if (acc.colors[hex].wrongColor.length < 10) {
-          acc.colors[hex].wrongColor.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type});
+          acc.colors[hex].wrongColor.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id});
         }
       }
     }
@@ -597,7 +593,7 @@ function walk(node, acc, parentMap, componentMap) {
       // path já contém toda a hierarquia de ancestrais (topFrame → ... → parentFrame)
       const fullPath = path.join(' › ') || node.name;
       const textPreview = (node.characters || '').slice(0, 40).replace(/\n/g,' ');
-      acc.fonts[f].locations.push({fullPath, nodeName: node.name, textPreview});
+      acc.fonts[f].locations.push({fullPath, nodeName: node.name, textPreview, nodeId: node.id});
     }
   }
 
@@ -611,7 +607,7 @@ function walk(node, acc, parentMap, componentMap) {
       if (!hasVar) {
         const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
         const k = `sp:${prop}:${Math.round(val)}:${topFrame}:${parentFrame}`;
-        if (!acc.tokens[k]) acc.tokens[k] = {kind:'spacing', prop, value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, status, count:0};
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'spacing', prop, value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, status, count:0};
         acc.tokens[k].count++;
       }
     }
@@ -624,7 +620,7 @@ function walk(node, acc, parentMap, componentMap) {
       if (!hasVar) {
         const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
         const k = `r:${Math.round(val*10)}:${topFrame}:${parentFrame}`;
-        if (!acc.tokens[k]) acc.tokens[k] = {kind:'radius', prop:'cornerRadius', value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, status, count:0};
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'radius', prop:'cornerRadius', value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, status, count:0};
         acc.tokens[k].count++;
       }
     }
@@ -734,6 +730,7 @@ async function analyzeFile(fileKey, token) {
       detail:`${c.count}x — substituir por ${c.closestDS} (dist: ${c.dist})`,
       frames: uniqFrames.length ? uniqFrames : c.frames.slice(0,3),
       fullPath: locs.length ? locs[0].fullPath : (c.frames[0]||''),
+      nodeId: locs.length ? locs[0].nodeId : null,
       node: locs.length ? `nó: ${locs[0].nodeName}` : null
     });
   }
@@ -745,6 +742,7 @@ async function analyzeFile(fileKey, token) {
       detail:`${locs.length} nó(s) com valor manual — vincular à variável do DS`,
       frames: [...new Set(locs.map(l=>l.fullPath.split(' › ')[0]))].slice(0,3),
       fullPath: locs.length ? locs[0].fullPath : '',
+      nodeId: locs.length ? locs[0].nodeId : null,
       node: locs.length ? `nó: ${locs[0].nodeName} (${locs[0].nodeType})` : null
     });
   }
@@ -753,7 +751,8 @@ async function analyzeFile(fileKey, token) {
       title:`Componente fora do DS: ${c.name}`,
       detail:`${c.count}x`,
       frames:[c.topFrame].filter(Boolean),
-      fullPath: c.topFrame,
+      fullPath: c.fullPath || c.topFrame,
+      nodeId: c.nodeId,
       node: c.nodeName!==c.name ? `nó renomeado: "${c.nodeName}"` : null
     });
   for (const f of fonts.filter(f=>!f.inDS)) {
@@ -764,13 +763,28 @@ async function analyzeFile(fileKey, token) {
       detail:`${f.count}x — usar Onest`,
       frames: uniqFrames,
       fullPath: locs.length ? locs[0].fullPath : '',
+      nodeId: locs.length ? locs[0].nodeId : null,
       node: locs.length ? `"${locs[0].textPreview}"` : null
     });
   }
   for (const t of manualWrong.slice(0,15))
-    issues.push({sev:'high', type:t.kind, title:`${t.prop} = ${t.value}px — valor e variável incorretos`, detail:`${t.count}x — valor fora dos tokens e sem variável vinculada`, frames:[t.topFrame], parentFrame:t.parentFrame, node:t.nodeName});
+    issues.push({sev:'high', type:t.kind,
+      title:`${t.prop} = ${t.value}px — valor e variável incorretos`,
+      detail:`${t.count}x — valor fora dos tokens e sem variável vinculada`,
+      frames:[t.topFrame], parentFrame:t.parentFrame,
+      fullPath:`${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?' › '+t.parentFrame:''}`,
+      nodeId: t.nodeId,
+      node:t.nodeName
+    });
   for (const t of manualOk.slice(0,15))
-    issues.push({sev:'medium', type:t.kind, title:`${t.prop} = ${t.value}px — sem variável vinculada`, detail:`${t.count}x — vincular à variável: ${t.kind==='spacing'?'spacing':'border-radius'}-${nearest(t.kind==='spacing'?DS.spacing:DS.radius,t.value)}`, frames:[t.topFrame], parentFrame:t.parentFrame, node:t.nodeName});
+    issues.push({sev:'medium', type:t.kind,
+      title:`${t.prop} = ${t.value}px — sem variável vinculada`,
+      detail:`${t.count}x — vincular à variável: ${t.kind==='spacing'?'spacing':'border-radius'}-${nearest(t.kind==='spacing'?DS.spacing:DS.radius,t.value)}`,
+      frames:[t.topFrame], parentFrame:t.parentFrame,
+      fullPath:`${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?' › '+t.parentFrame:''}`,
+      nodeId: t.nodeId,
+      node:t.nodeName
+    });
   issues.sort((a,b)=>(a.sev==='high'?0:1)-(b.sev==='high'?0:1));
 
   // Acessibilidade — deduplicar e ordenar por criticidade
@@ -801,7 +815,7 @@ async function analyzeFile(fileKey, token) {
   const a11yBase     = Math.max(1, totalNodes2 / 50);
   const a11yScore    = Math.max(0, Math.round((1 - Math.min(weightedA11y / a11yBase, 1)) * 100));
 
-  return {fileName:file.name, pages:pagesSummary, components, colors, fonts, tokenIssues, manualWrong, manualOk, tokenScore, issues, allA11y, a11yFails, a11yWarns:a11yWarns.concat(headingIssues), a11yScore};
+  return {fileName:file.name, fileKey, pages:pagesSummary, components, colors, fonts, tokenIssues, manualWrong, manualOk, tokenScore, issues, allA11y, a11yFails, a11yWarns:a11yWarns.concat(headingIssues), a11yScore};
 }
 
 // ── RENDER ────────────────────────────────────────────────────────────────────
@@ -814,7 +828,14 @@ function tab(name){
 function bdg(ok){return`<span class="bdg ${ok?'bok':'berr'}">${ok?'DS':'fora'}</span>`;}
 function sbdg(s){return`<span class="bdg ${s==='high'?'berr':'bwarn'}">${s}</span>`;}
 
+function figmaNodeLink(nodeId) {
+  if (!nodeId || !window._figmaFileKey) return null;
+  const urlId = String(nodeId).replace(/:/g, '-');
+  return `https://www.figma.com/design/${window._figmaFileKey}/?node-id=${encodeURIComponent(urlId)}`;
+}
+
 function issueCard(i){
+  // Caminho completo
   let pathStr = '';
   if (i.fullPath && i.fullPath.length > 0) {
     pathStr = i.fullPath;
@@ -824,9 +845,16 @@ function issueCard(i){
   }
   const fp = pathStr ? `<div class="iframe">▸ ${pathStr}</div>` : '';
   const np = i.node ? `<div class="inode">${i.node}</div>` : '';
+
+  // Link direto para o nó no Figma
+  const link = figmaNodeLink(i.nodeId);
+  const titleEl = link
+    ? `<a href="${link}" target="_blank" style="color:inherit;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25);cursor:pointer" title="Abrir no Figma">${i.title} ↗</a>`
+    : i.title;
+
   return `<div class="issue-card ${i.sev}">
     <div class="idot" style="background:${i.sev==='high'?'var(--err)':'var(--warn)'}"></div>
-    <div style="flex:1"><div class="ititle">${i.title}</div><div class="imeta">${i.type} · ${i.detail}</div>${fp}${np}</div>
+    <div style="flex:1"><div class="ititle">${titleEl}</div><div class="imeta">${i.type} · ${i.detail}</div>${fp}${np}</div>
     <div class="issue-right">${sbdg(i.sev)}</div>
   </div>`;
 }
@@ -835,9 +863,11 @@ function tokenRow(t){
   const isWrong = t.status==='manual_wrong_value';
   const sug     = nearest(t.kind==='spacing'?DS.spacing:DS.radius, t.value);
   const varName = t.kind==='spacing'?`spacing-${sug}`:`border-radius-${sug}`;
+  const tLink = figmaNodeLink(t.nodeId);
+  const tTitle = tLink ? `<a href="${tLink}" target="_blank" style="color:var(--text);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25)" title="Abrir no Figma">${t.prop} = ${t.value}px ↗</a>` : `${t.prop} = ${t.value}px`;
   return `<div class="row">
     <div class="rl">
-      <div class="rn">${t.prop} = ${t.value}px</div>
+      <div class="rn">${tTitle}</div>
       <div class="rs">${isWrong?`valor fora dos tokens — mais próximo: ${sug}px`:'valor correto, mas digitado manualmente'} → vincular: <code>${varName}</code></div>
       <div class="rframe">▸ ${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?` › ${t.parentFrame}`:''}</div>
       <div class="rp">nó: ${t.nodeName} (${t.nodeType})</div>
@@ -878,11 +908,15 @@ function renderResults(d){
   const inDS=d.components.filter(c=>c.inDS), outDS=d.components.filter(c=>!c.inDS);
   document.getElementById('tab-components').innerHTML=[
     outDS.length?`<div class="sec"><div class="sh"><span class="st">Fora do DS</span><span class="bdg berr">${outDS.length} tipos</span></div>
-      ${outDS.map(c=>`<div class="row"><div class="rl">
-        <div class="rn">${c.name}</div>
-        ${c.nodeName&&c.nodeName!==c.name?`<div class="rs">nó: ${c.nodeName}</div>`:''}
-        <div class="rframe">▸ ${c.topFrame}</div>
-      </div><div class="rr"><span class="cnt">${c.count}x</span>${bdg(false)}</div></div>`).join('')}</div>`:'',
+      ${outDS.map(c=>{
+        const cLink = figmaNodeLink(c.nodeId);
+        const cName = cLink ? `<a href="${cLink}" target="_blank" style="color:var(--text);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25)" title="Abrir no Figma">${c.name} ↗</a>` : c.name;
+        return `<div class="row"><div class="rl">
+          <div class="rn">${cName}</div>
+          ${c.nodeName&&c.nodeName!==c.name?`<div class="rs">nó: ${c.nodeName}</div>`:''}
+          <div class="rframe">▸ ${c.fullPath||c.topFrame}</div>
+        </div><div class="rr"><span class="cnt">${c.count}x</span>${bdg(false)}</div></div>`;
+      }).join('')}</div>`:'',
     `<div class="sec"><div class="sh"><span class="st">No DS</span><span class="bdg bok">${inDS.length} tipos</span></div>
       ${inDS.slice(0,30).map(c=>`<div class="row"><div class="rl"><div class="rn">${c.name}</div></div><div class="rr"><span class="cnt">${c.count}x</span>${bdg(true)}</div></div>`).join('')}
       ${inDS.length>30?`<div style="padding:10px 0;font-size:11px;color:var(--text3)">+${inDS.length-30} outros no DS</div>`:''}</div>`
@@ -903,24 +937,32 @@ function renderResults(d){
   document.getElementById('tab-colors').innerHTML=[
     // 1. Cores erradas (fora do DS)
     badC.length?`<div class="sec"><div class="sh"><span class="st">Cor fora do DS</span><span class="bdg berr">${badC.length} cores</span></div>
-      ${badC.map(c=>`<div class="row"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
+      ${badC.map(c=>{
+        const cLink = c.wrongColor?.length ? figmaNodeLink(c.wrongColor[0].nodeId) : null;
+        const cTitle = cLink ? `<a href="${cLink}" target="_blank" style="color:var(--text);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25)" title="Abrir no Figma">${c.hex} ↗</a>` : c.hex;
+        return `<div class="row"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
         <span class="dot" style="background:${c.hex};margin-top:3px;flex-shrink:0"></span>
-        <div class="rl"><div class="rn">${c.hex}</div>
+        <div class="rl"><div class="rn">${cTitle}</div>
           <div class="rs">substituir por ${c.closestDS} (dist: ${c.dist})</div>
           ${locRows(c.wrongColor)}
         </div>
-      </div><div class="rr" style="align-self:flex-start"><span class="cnt">${c.count}x</span>${bdg(false)}</div></div>`).join('')}</div>`:'',
+      </div><div class="rr" style="align-self:flex-start"><span class="cnt">${c.count}x</span>${bdg(false)}</div></div>`;
+      }).join('')}</div>`:'',
 
     // 2. Cores certas mas sem variável vinculada
     noVarC.length?`<div class="sec"><div class="sh"><span class="st">Cor correta, sem variável vinculada</span><span class="bdg bwarn">${noVarC.length} cores</span></div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px">O valor está certo mas foi digitado manualmente — vincular à variável do DS</div>
-      ${noVarC.map(c=>`<div class="row"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
+      ${noVarC.map(c=>{
+        const nvLink = c.noVar?.length ? figmaNodeLink(c.noVar[0].nodeId) : null;
+        const nvTitle = nvLink ? `<a href="${nvLink}" target="_blank" style="color:var(--text);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25)" title="Abrir no Figma">${c.hex} ↗</a>` : c.hex;
+        return `<div class="row"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
         <span class="dot" style="background:${c.hex};margin-top:3px;flex-shrink:0"></span>
-        <div class="rl"><div class="rn">${c.hex}</div>
+        <div class="rl"><div class="rn">${nvTitle}</div>
           <div class="rs">vincular à variável correspondente no DS</div>
           ${locRows(c.noVar)}
         </div>
-      </div><div class="rr" style="align-self:flex-start"><span class="cnt">${c.noVar.length}x</span><span class="bdg bwarn">sem var</span></div></div>`).join('')}</div>`:'',
+      </div><div class="rr" style="align-self:flex-start"><span class="cnt">${c.noVar.length}x</span><span class="bdg bwarn">sem var</span></div></div>`;
+      }).join('')}</div>`:'',
 
     // 3. Corretas e vinculadas
     goodC.length?`<div class="sec"><div class="sh"><span class="st">Cor no DS com variável</span><span class="bdg bok">${goodC.length} cores</span></div>
@@ -947,11 +989,13 @@ function renderResults(d){
           <div class="rn" style="font-family:'${f.family}',sans-serif">${f.family}</div>
           <div class="rs">substituir por Onest · ${f.count} ocorrência(s)</div>
           <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
-            ${locs.map(l=>`
-              <div style="background:var(--bg3);border-radius:6px;padding:7px 10px;">
+            ${locs.map(l=>{
+              const fLink = figmaNodeLink(l.nodeId);
+              return `<div style="background:var(--bg3);border-radius:6px;padding:7px 10px;">
                 <div class="rframe" style="margin:0">▸ ${l.fullPath}</div>
-                <div class="rp" style="margin-top:3px">nó: ${l.nodeName}${l.textPreview?` — "${l.textPreview}"`:''}</div>
-              </div>`).join('')}
+                <div class="rp" style="margin-top:3px">${fLink?`<a href="${fLink}" target="_blank" style="color:var(--accent2);text-decoration:none" title="Abrir no Figma">nó: ${l.nodeName} ↗</a>`:`nó: ${l.nodeName}`}${l.textPreview?` — "${l.textPreview}"`:''}</div>
+              </div>`;
+            }).join('')}
           </div>
         </div><div class="rr" style="align-self:flex-start"><span class="cnt">${f.count}x</span>${bdg(false)}</div></div>`;
       }).join('')}
@@ -1047,6 +1091,7 @@ async function run(){
   document.getElementById('loading').style.display='block';
   try{
     const data=await analyzeFile(k,token);
+    window._figmaFileKey = k;
     renderResults(data);
   }catch(e){
     err.textContent=`Erro: ${e.message}`;err.style.display='block';document.getElementById('empty').style.display='block';
