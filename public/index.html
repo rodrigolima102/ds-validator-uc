@@ -610,7 +610,12 @@ function walk(node, acc, parentMap, componentMap, pageId) {
       if (!hasVar) {
         const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
         const k = `sp:${prop}:${Math.round(val)}:${topFrame}:${parentFrame}`;
-        if (!acc.tokens[k]) acc.tokens[k] = {kind:'spacing', prop, value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId, status, count:0};
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'spacing', prop, value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId, fullPath, status, count:0};
+        // Atualizar sempre para ter o nó mais recente/específico
+        acc.tokens[k].nodeId = node.id;
+        acc.tokens[k].pageId = pageId;
+        acc.tokens[k].nodeName = node.name;
+        acc.tokens[k].fullPath = fullPath;
         acc.tokens[k].count++;
       }
     }
@@ -623,7 +628,11 @@ function walk(node, acc, parentMap, componentMap, pageId) {
       if (!hasVar) {
         const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
         const k = `r:${Math.round(val*10)}:${topFrame}:${parentFrame}`;
-        if (!acc.tokens[k]) acc.tokens[k] = {kind:'radius', prop:'cornerRadius', value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId, status, count:0};
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'radius', prop:'cornerRadius', value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId, fullPath, status, count:0};
+        acc.tokens[k].nodeId = node.id;
+        acc.tokens[k].pageId = pageId;
+        acc.tokens[k].nodeName = node.name;
+        acc.tokens[k].fullPath = fullPath;
         acc.tokens[k].count++;
       }
     }
@@ -779,7 +788,7 @@ async function analyzeFile(fileKey, token) {
       title:`${t.prop} = ${t.value}px — valor e variável incorretos`,
       detail:`${t.count}x — valor fora dos tokens e sem variável vinculada`,
       frames:[t.topFrame], parentFrame:t.parentFrame,
-      fullPath:`${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?' › '+t.parentFrame:''}`,
+      fullPath: t.fullPath || `${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?' › '+t.parentFrame:''}`,
       nodeId: t.nodeId, pageId: t.pageId,
       node:t.nodeName
     });
@@ -788,7 +797,7 @@ async function analyzeFile(fileKey, token) {
       title:`${t.prop} = ${t.value}px — sem variável vinculada`,
       detail:`${t.count}x — vincular à variável: ${t.kind==='spacing'?'spacing':'border-radius'}-${nearest(t.kind==='spacing'?DS.spacing:DS.radius,t.value)}`,
       frames:[t.topFrame], parentFrame:t.parentFrame,
-      fullPath:`${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?' › '+t.parentFrame:''}`,
+      fullPath: t.fullPath || `${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?' › '+t.parentFrame:''}`,
       nodeId: t.nodeId, pageId: t.pageId,
       node:t.nodeName
     });
@@ -837,9 +846,8 @@ function sbdg(s){return`<span class="bdg ${s==='high'?'berr':'bwarn'}">${s}</spa
 
 function figmaNodeLink(nodeId, pageId) {
   if (!nodeId || !window._figmaFileKey) return null;
-  // Figma aceita node-id com : substituído por - (sem encode)
-  const urlId = String(nodeId).replace(/:/g, '-');
-  // page-id ajuda a abrir na página correta
+  // Substituir ":" por "-" e encodar ";" para não quebrar a URL
+  const urlId = String(nodeId).replace(/:/g, '-').replace(/;/g, '%3B');
   const pageParam = pageId ? `&page-id=${String(pageId).replace(/:/g,'-')}` : '';
   return `https://www.figma.com/design/${window._figmaFileKey}/?node-id=${urlId}${pageParam}`;
 }
@@ -879,7 +887,7 @@ function tokenRow(t){
     <div class="rl">
       <div class="rn">${tTitle}</div>
       <div class="rs">${isWrong?`valor fora dos tokens — mais próximo: ${sug}px`:'valor correto, mas digitado manualmente'} → vincular: <code>${varName}</code></div>
-      <div class="rframe">▸ ${t.topFrame}${t.parentFrame&&t.parentFrame!==t.topFrame?` › ${t.parentFrame}`:''}</div>
+      <div class="rframe">▸ ${t.fullPath || (t.topFrame + (t.parentFrame&&t.parentFrame!==t.topFrame?' › '+t.parentFrame:''))}</div>
       <div class="rp">nó: ${t.nodeName} (${t.nodeType})</div>
     </div>
     <div class="rr"><span class="cnt">${t.count}x</span><span class="bdg ${isWrong?'berr':'bmanual'}">${isWrong?'valor+var':'sem var'}</span></div>
