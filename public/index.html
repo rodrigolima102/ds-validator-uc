@@ -520,6 +520,7 @@ function walk(node, acc, parentMap, componentMap) {
   const path       = getAncestorPath(node.id, parentMap);
   const topFrame   = path[0] || node.name;
   const parentFrame= path.length > 1 ? path[path.length-1] : topFrame;
+  const fullPath   = path.join(' › ') || node.name;
 
   // ── Componentes ────────────────────────────────────────────────────────────
   if (node.type === 'INSTANCE' && !node.id.includes(';')) {
