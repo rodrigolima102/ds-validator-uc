@@ -537,11 +537,13 @@ function walk(node, acc, parentMap, componentMap) {
       topFrame,
       fullPath,
       nodeId: node.id,
+      pageId: window._currentPageId,
       inDS,
       count: 0
     };
     // Sempre atualizar nodeId para ter um exemplo válido
     acc.comps[k].nodeId = node.id;
+    acc.comps[k].pageId = window._currentPageId;
     acc.comps[k].count++;
   }
 
@@ -572,13 +574,13 @@ function walk(node, acc, parentMap, componentMap) {
       // Cor certa mas sem variável vinculada
       if (!hasVar && inDSColor) {
         if (acc.colors[hex].noVar.length < 10) {
-          acc.colors[hex].noVar.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id});
+          acc.colors[hex].noVar.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id, pageId: window._currentPageId});
         }
       }
       // Cor errada (fora do DS)
       if (!inDSColor) {
         if (acc.colors[hex].wrongColor.length < 10) {
-          acc.colors[hex].wrongColor.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id});
+          acc.colors[hex].wrongColor.push({fullPath: path.join(' › ') || node.name, nodeName: node.name, nodeType: node.type, nodeId: node.id, pageId: window._currentPageId});
         }
       }
     }
@@ -594,7 +596,7 @@ function walk(node, acc, parentMap, componentMap) {
       // path já contém toda a hierarquia de ancestrais (topFrame → ... → parentFrame)
       const fullPath = path.join(' › ') || node.name;
       const textPreview = (node.characters || '').slice(0, 40).replace(/\n/g,' ');
-      acc.fonts[f].locations.push({fullPath, nodeName: node.name, textPreview, nodeId: node.id});
+      acc.fonts[f].locations.push({fullPath, nodeName: node.name, textPreview, nodeId: node.id, pageId: window._currentPageId});
     }
   }
 
@@ -608,7 +610,7 @@ function walk(node, acc, parentMap, componentMap) {
       if (!hasVar) {
         const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
         const k = `sp:${prop}:${Math.round(val)}:${topFrame}:${parentFrame}`;
-        if (!acc.tokens[k]) acc.tokens[k] = {kind:'spacing', prop, value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, status, count:0};
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'spacing', prop, value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId:window._currentPageId, status, count:0};
         acc.tokens[k].count++;
       }
     }
@@ -621,7 +623,7 @@ function walk(node, acc, parentMap, componentMap) {
       if (!hasVar) {
         const status = validVal ? 'manual_ok_value' : 'manual_wrong_value';
         const k = `r:${Math.round(val*10)}:${topFrame}:${parentFrame}`;
-        if (!acc.tokens[k]) acc.tokens[k] = {kind:'radius', prop:'cornerRadius', value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, status, count:0};
+        if (!acc.tokens[k]) acc.tokens[k] = {kind:'radius', prop:'cornerRadius', value:val, topFrame, parentFrame, nodeName:node.name, nodeType:node.type, nodeId:node.id, pageId:window._currentPageId, status, count:0};
         acc.tokens[k].count++;
       }
     }
@@ -684,6 +686,7 @@ async function analyzeFile(fileKey, token) {
     (function cnt(n){nc++;if(n.children)n.children.forEach(cnt);})(pnode);
     pagesSummary.push({name:page.name, nodeCount:nc});
     const parentMap = buildParentMap(pnode);
+    window._currentPageId = page.id;
     walk(pnode, acc, parentMap, componentMap);
     const nodeMap = buildNodeMap(pnode);
     walkA11y(pnode, acc, nodeMap, parentMap);
@@ -732,6 +735,7 @@ async function analyzeFile(fileKey, token) {
       frames: uniqFrames.length ? uniqFrames : c.frames.slice(0,3),
       fullPath: locs.length ? locs[0].fullPath : (c.frames[0]||''),
       nodeId: locs.length ? locs[0].nodeId : null,
+      pageId: locs.length ? locs[0].pageId : null,
       node: locs.length ? `nó: ${locs[0].nodeName}` : null
     });
   }
@@ -744,6 +748,7 @@ async function analyzeFile(fileKey, token) {
       frames: [...new Set(locs.map(l=>l.fullPath.split(' › ')[0]))].slice(0,3),
       fullPath: locs.length ? locs[0].fullPath : '',
       nodeId: locs.length ? locs[0].nodeId : null,
+      pageId: locs.length ? locs[0].pageId : null,
       node: locs.length ? `nó: ${locs[0].nodeName} (${locs[0].nodeType})` : null
     });
   }
@@ -754,6 +759,7 @@ async function analyzeFile(fileKey, token) {
       frames:[c.topFrame].filter(Boolean),
       fullPath: c.fullPath || c.topFrame,
       nodeId: c.nodeId,
+      pageId: c.pageId,
       node: c.nodeName!==c.name ? `nó renomeado: "${c.nodeName}"` : null
     });
   for (const f of fonts.filter(f=>!f.inDS)) {
@@ -765,6 +771,7 @@ async function analyzeFile(fileKey, token) {
       frames: uniqFrames,
       fullPath: locs.length ? locs[0].fullPath : '',
       nodeId: locs.length ? locs[0].nodeId : null,
+      pageId: locs.length ? locs[0].pageId : null,
       node: locs.length ? `"${locs[0].textPreview}"` : null
     });
   }
@@ -829,10 +836,13 @@ function tab(name){
 function bdg(ok){return`<span class="bdg ${ok?'bok':'berr'}">${ok?'DS':'fora'}</span>`;}
 function sbdg(s){return`<span class="bdg ${s==='high'?'berr':'bwarn'}">${s}</span>`;}
 
-function figmaNodeLink(nodeId) {
+function figmaNodeLink(nodeId, pageId) {
   if (!nodeId || !window._figmaFileKey) return null;
+  // Figma aceita node-id com : substituído por - (sem encode)
   const urlId = String(nodeId).replace(/:/g, '-');
-  return `https://www.figma.com/design/${window._figmaFileKey}/?node-id=${encodeURIComponent(urlId)}`;
+  // page-id ajuda a abrir na página correta
+  const pageParam = pageId ? `&page-id=${String(pageId).replace(/:/g,'-')}` : '';
+  return `https://www.figma.com/design/${window._figmaFileKey}/?node-id=${urlId}${pageParam}`;
 }
 
 function issueCard(i){
@@ -848,7 +858,7 @@ function issueCard(i){
   const np = i.node ? `<div class="inode">${i.node}</div>` : '';
 
   // Link direto para o nó no Figma
-  const link = figmaNodeLink(i.nodeId);
+  const link = figmaNodeLink(i.nodeId, i.pageId);
   const titleEl = link
     ? `<a href="${link}" target="_blank" style="color:inherit;text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25);cursor:pointer" title="Abrir no Figma">${i.title} ↗</a>`
     : i.title;
@@ -864,7 +874,7 @@ function tokenRow(t){
   const isWrong = t.status==='manual_wrong_value';
   const sug     = nearest(t.kind==='spacing'?DS.spacing:DS.radius, t.value);
   const varName = t.kind==='spacing'?`spacing-${sug}`:`border-radius-${sug}`;
-  const tLink = figmaNodeLink(t.nodeId);
+  const tLink = figmaNodeLink(t.nodeId, t.pageId);
   const tTitle = tLink ? `<a href="${tLink}" target="_blank" style="color:var(--text);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25)" title="Abrir no Figma">${t.prop} = ${t.value}px ↗</a>` : `${t.prop} = ${t.value}px`;
   return `<div class="row">
     <div class="rl">
@@ -910,7 +920,7 @@ function renderResults(d){
   document.getElementById('tab-components').innerHTML=[
     outDS.length?`<div class="sec"><div class="sh"><span class="st">Fora do DS</span><span class="bdg berr">${outDS.length} tipos</span></div>
       ${outDS.map(c=>{
-        const cLink = figmaNodeLink(c.nodeId);
+        const cLink = figmaNodeLink(c.nodeId, c.pageId);
         const cName = cLink ? `<a href="${cLink}" target="_blank" style="color:var(--text);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25)" title="Abrir no Figma">${c.name} ↗</a>` : c.name;
         return `<div class="row"><div class="rl">
           <div class="rn">${cName}</div>
@@ -939,7 +949,7 @@ function renderResults(d){
     // 1. Cores erradas (fora do DS)
     badC.length?`<div class="sec"><div class="sh"><span class="st">Cor fora do DS</span><span class="bdg berr">${badC.length} cores</span></div>
       ${badC.map(c=>{
-        const cLink = c.wrongColor?.length ? figmaNodeLink(c.wrongColor[0].nodeId) : null;
+        const cLink = c.wrongColor?.length ? figmaNodeLink(c.wrongColor[0].nodeId, c.wrongColor[0].pageId) : null;
         const cTitle = cLink ? `<a href="${cLink}" target="_blank" style="color:var(--text);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25)" title="Abrir no Figma">${c.hex} ↗</a>` : c.hex;
         return `<div class="row"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
         <span class="dot" style="background:${c.hex};margin-top:3px;flex-shrink:0"></span>
@@ -954,7 +964,7 @@ function renderResults(d){
     noVarC.length?`<div class="sec"><div class="sh"><span class="st">Cor correta, sem variável vinculada</span><span class="bdg bwarn">${noVarC.length} cores</span></div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px">O valor está certo mas foi digitado manualmente — vincular à variável do DS</div>
       ${noVarC.map(c=>{
-        const nvLink = c.noVar?.length ? figmaNodeLink(c.noVar[0].nodeId) : null;
+        const nvLink = c.noVar?.length ? figmaNodeLink(c.noVar[0].nodeId, c.noVar[0].pageId) : null;
         const nvTitle = nvLink ? `<a href="${nvLink}" target="_blank" style="color:var(--text);text-decoration:none;border-bottom:1px dashed rgba(255,255,255,0.25)" title="Abrir no Figma">${c.hex} ↗</a>` : c.hex;
         return `<div class="row"><div style="display:flex;align-items:flex-start;gap:10px;flex:1;min-width:0">
         <span class="dot" style="background:${c.hex};margin-top:3px;flex-shrink:0"></span>
@@ -991,7 +1001,7 @@ function renderResults(d){
           <div class="rs">substituir por Onest · ${f.count} ocorrência(s)</div>
           <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
             ${locs.map(l=>{
-              const fLink = figmaNodeLink(l.nodeId);
+              const fLink = figmaNodeLink(l.nodeId, l.pageId);
               return `<div style="background:var(--bg3);border-radius:6px;padding:7px 10px;">
                 <div class="rframe" style="margin:0">▸ ${l.fullPath}</div>
                 <div class="rp" style="margin-top:3px">${fLink?`<a href="${fLink}" target="_blank" style="color:var(--accent2);text-decoration:none" title="Abrir no Figma">nó: ${l.nodeName} ↗</a>`:`nó: ${l.nodeName}`}${l.textPreview?` — "${l.textPreview}"`:''}</div>
